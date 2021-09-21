@@ -24,4 +24,6 @@ int main()
 {
 	static_vector<Test, 10> vec;
 
+	auto it = vec.cbegin();
+
 }

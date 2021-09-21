@@ -11,6 +11,10 @@ class static_vector
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
 	std::size_t _size = 0;
 
+	static constexpr bool no_throw_default_construction = std::is_nothrow_default_constructible_v<T>;
+	static constexpr bool no_throw_destructible = std::is_nothrow_destructible_v<T>;
+	static constexpr bool no_throw_copyable = std::is_nothrow_copy_assignable_v<T>;
+
 public:
 
 	struct iterator
@@ -28,20 +32,9 @@ public:
 		iterator(pointer other) noexcept : ptr{ other } {}
 		iterator(bool) = delete;
 
-		explicit operator reference() const noexcept
-		{
-			return *ptr;
-		}
-
 		iterator& operator=(const iterator&) = default;
 
 		iterator& operator=(iterator&&) = default;
-
-		iterator& operator= (const pointer other) noexcept
-		{
-			ptr = other;
-			return (*this);
-		}
 
 		reference operator* () const noexcept
 		{
@@ -150,11 +143,6 @@ public:
 		const_iterator(bool) = delete;
 
 		const_iterator(const iterator other) noexcept : ptr{ other.ptr } {}
-
-		explicit operator reference() const noexcept
-		{
-			return *ptr;
-		}
 
 		const_iterator& operator=(const const_iterator&) noexcept = default;
 
@@ -284,20 +272,27 @@ public:
 
 	constexpr const_iterator cbegin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<T*>(&_data[0])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
 	}
 
 	constexpr const_iterator cend() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<T*>(&_data[_size])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
 	}
 
 	constexpr static_vector() noexcept = default;
 
 	template<size_t Other_Capacity>
-	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept
-		requires (Other_Capacity <= Capacity)
+	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable && no_throw_destructible && (Other_Capacity <= Capacity)))
 	{
+		if constexpr (Other_Capacity > Capacity)
+		{
+			if (other._size > Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+			}
+		}
+
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
 			std::copy_n(other.cbegin(), Other_Capacity, begin());
@@ -322,7 +317,7 @@ public:
 		}
 	}
 
-	constexpr ~static_vector() noexcept
+	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
@@ -335,7 +330,7 @@ public:
 		return _size;
 	}
 
-	constexpr void resize(std::size_t new_size)
+	constexpr void resize(std::size_t new_size) noexcept (noexcept(no_throw_default_construction && no_throw_destructible))
 	{
 		if (new_size > Capacity)
 			throw std::runtime_error("Can't resize beyond capacity!\n");
