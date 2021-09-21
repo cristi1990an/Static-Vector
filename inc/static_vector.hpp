@@ -5,17 +5,11 @@
 #include <algorithm>
 #include <new>
 
-template <typename T, size_t Capacity, typename Allocator = std::allocator<T>>
+template <typename T, size_t Capacity>
 class static_vector
 {
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
 	std::size_t _size = 0;
-
-#ifdef _MSC_VER 
-	[[msvc::no_unique_address]] Allocator allocator_instance;
-#else
-	[[no_unique_address]] Allocator allocator_instance;
-#endif
 
 public:
 
@@ -272,13 +266,12 @@ public:
 	};
 
 	using value_type = T;
-	using allocator_type = Allocator;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
 	using reference = value_type&;
 	using const_reference = const value_type&;
-	using pointer = std::allocator_traits<Allocator>::pointer;
-	using const_pointer = std::allocator_traits<Allocator>::const_pointer;
+	using pointer = T*;
+	using const_pointer = const T*;
 
 	constexpr iterator begin() noexcept
 	{
@@ -302,7 +295,7 @@ public:
 	constexpr static_vector() noexcept = default;
 
 	template<size_t Other_Capacity>
-	constexpr static_vector(const static_vector<T, Other_Capacity, Allocator>& other) noexcept
+	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept
 		requires (Other_Capacity <= Capacity)
 	{
 		if constexpr (std::is_trivially_copyable_v<T>)
