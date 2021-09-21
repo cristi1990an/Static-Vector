@@ -300,17 +300,23 @@ public:
 		}
 
 		std::uninitialized_default_construct_n(begin(), count);
+
+		_size = count;
 	}
 
 	template<typename Iterator>
 	constexpr static_vector(Iterator first, Iterator last)
 	{
-		if (std::distance(first, last) > Capacity)
+		const auto count = std::distance(first, last);
+
+		if (count > Capacity)
 		{
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
 		}
 
 		std::uninitialized_copy(first, last, begin());
+
+		_size = count;
 	}
 
 	constexpr static_vector(std::initializer_list<T> values)
@@ -323,6 +329,8 @@ public:
 		}
 
 		std::uninitialized_copy_n(values.begin(), count, begin());
+
+		_size = count;
 	}
 
 	template<std::size_t Other_Capacity>
@@ -362,7 +370,6 @@ public:
 			{
 				std::copy_n(other.cbegin(), _size, begin());
 				std::uninitialized_copy_n(other.cbegin() + _size, other.size() - _size, begin() + _size);
-				_size = other.size();
 			}
 			else
 			{
@@ -371,7 +378,6 @@ public:
 				{
 					std::destroy_n(begin() + other.size(), _size - other.size());
 				}
-				
 			}
 		}
 
@@ -399,7 +405,6 @@ public:
 			{
 				std::copy_n(values.begin(), _size, begin());
 				std::uninitialized_copy_n(values.begin() + _size, count - _size, begin() + _size);
-				_size = count;
 			}
 			else
 			{
@@ -408,9 +413,12 @@ public:
 				{
 					std::destroy_n(begin() + count, _size - count);
 				}
-				_size = count;
 			}
 		}
+
+		_size = count;
+
+		return *this;
 	}
 
 	constexpr reference operator[] (std::size_t index) noexcept
@@ -465,6 +473,21 @@ public:
 		_size++;
 	}
 
+	constexpr void pop_back()
+	{
+		if (empty())
+		{
+			throw std::runtime_error("Can't pop from empty vector!\n");
+		}
+
+		if constexpr (!std::is_trivially_destructible_v<T>)
+		{
+			std::destroy_at(reinterpret_cast<T*>(&_data[_size - 1]));
+		}
+
+		_size--;
+	}
+
 	template <typename ... Args>
 	constexpr void emplace_back(Args&& ... args)
 	{
@@ -477,7 +500,7 @@ public:
 		_size++;
 	}
 
-	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
+	constexpr void clear() noexcept (noexcept(no_throw_destructible))
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
@@ -504,7 +527,6 @@ public:
 		{
 			const auto difference = new_size - _size;
 			std::uninitialized_value_construct_n(begin() + difference, difference);
-			_size = new_size;
 		}
 		else
 		{
@@ -514,9 +536,9 @@ public:
 			{
 				std::destroy_n(begin() + difference, difference);
 			}
-
-			_size = new_size;
 		}
+
+		_size = new_size;
 	}
 
 	consteval std::size_t max_size() const noexcept
@@ -532,6 +554,11 @@ public:
 	constexpr bool empty() const noexcept
 	{
 		return _size == 0;
+	}
+
+	constexpr std::size_t free_space() const noexcept
+	{
+		return Capacity - _size;
 	}
 
 	constexpr reference front() noexcept
