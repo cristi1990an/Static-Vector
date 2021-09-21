@@ -477,7 +477,7 @@ public:
 		_size++;
 	}
 
-	constexpr clear() noexcept (noexcept(no_throw_destructible))
+	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
