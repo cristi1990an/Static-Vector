@@ -282,6 +282,28 @@ public:
 
 	constexpr static_vector() noexcept = default;
 
+	constexpr static_vector(std::size_t count, const T& value) 
+	{
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_fill_n(begin(), count, value);
+	}
+
+	constexpr static_vector(std::initializer_list<T> values)
+	{
+		const auto count = values.size();
+
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_copy_n(values.begin(), count, begin());
+	}
+
 	template<std::size_t Other_Capacity>
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable&& no_throw_destructible && (Other_Capacity <= Capacity)))
 	{
@@ -333,6 +355,40 @@ public:
 		}
 
 		return *this;
+	}
+
+	constexpr void push_back(const T& val)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), val);
+		_size++;
+	}
+
+	constexpr void push_back(T&& val)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), std::forward<T>(val));
+		_size++;
+	}
+
+	template <typename ... Args>
+	constexpr void emplace_back(Args&& ... args)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), std::forward<T>(val)...);
+		_size++;
 	}
 
 	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
