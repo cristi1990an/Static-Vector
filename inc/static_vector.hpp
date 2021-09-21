@@ -496,7 +496,7 @@ public:
 			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
 		}
 
-		std::construct_at(std::to_address(end()), std::forward<T>(val)...);
+		std::construct_at(std::to_address(end()), std::forward<T>(args)...);
 		_size++;
 	}
 
@@ -506,11 +506,16 @@ public:
 		{
 			std::destroy_n(begin(), _size);
 		}
+
+		_size = 0;
 	}
 
 	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
 	{
-		clear();
+		if constexpr (!std::is_trivially_destructible_v<T>)
+		{
+			std::destroy_n(begin(), _size);
+		}
 	}
 
 	constexpr std::size_t size() const noexcept
