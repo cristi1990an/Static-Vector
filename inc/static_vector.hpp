@@ -282,8 +282,24 @@ public:
 
 	constexpr static_vector() noexcept = default;
 
-	template<size_t Other_Capacity>
-	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable && no_throw_destructible && (Other_Capacity <= Capacity)))
+	template<std::size_t Other_Capacity>
+	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable&& no_throw_destructible && (Other_Capacity <= Capacity)))
+	{
+		if constexpr (Other_Capacity > Capacity)
+		{
+			if (other.size() > Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+			}
+		}
+
+		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
+
+		_size = other.size();
+	}
+
+	template<std::size_t Other_Capacity>
+	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable && no_throw_destructible && (Other_Capacity <= Capacity)))
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -299,22 +315,24 @@ public:
 		}
 		else
 		{
-			if (_size <= other._size)
+			if (_size <= other.size())
 			{
 				std::copy_n(other.cbegin(), _size, begin());
-				std::uninitialized_copy_n(other.cbegin() + _size, other._size - _size, begin() + _size);
-				_size = other._size;
+				std::uninitialized_copy_n(other.cbegin() + _size, other.size() - _size, begin() + _size);
+				_size = other.size();
 			}
 			else
 			{
-				std::copy_n(other.cbegin(), other._size, begin());
+				std::copy_n(other.cbegin(), other.size(), begin());
 				if constexpr (!std::is_trivially_destructible_v<T>)
 				{
-					std::destroy_n(begin() + other._size, _size - other._size);
+					std::destroy_n(begin() + other.size(), _size - other.size());
 				}
-				_size = other._size;
+				_size = other.size();
 			}
 		}
+
+		return *this;
 	}
 
 	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))

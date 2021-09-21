@@ -24,6 +24,10 @@ int main()
 {
 	static_vector<Test, 10> vec;
 
-	auto it = vec.cbegin();
+	auto vec_2 = vec;
+
+	static_vector<Test, 20> vec_3;
+
+	vec_3 = vec;
 
 }
