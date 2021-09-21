@@ -282,6 +282,49 @@ public:
 
 	constexpr static_vector() noexcept = default;
 
+	constexpr static_vector(std::size_t count, const T& value) 
+	{
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_fill_n(begin(), count, value);
+	}
+
+	constexpr static_vector(std::size_t count)
+	{
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_default_construct_n(begin(), count);
+	}
+
+	template<typename Iterator>
+	constexpr static_vector(Iterator first, Iterator last)
+	{
+		if (std::distance(first, last) > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_copy(first, last, begin());
+	}
+
+	constexpr static_vector(std::initializer_list<T> values)
+	{
+		const auto count = values.size();
+
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		std::uninitialized_copy_n(values.begin(), count, begin());
+	}
+
 	template<std::size_t Other_Capacity>
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable&& no_throw_destructible && (Other_Capacity <= Capacity)))
 	{
@@ -311,7 +354,7 @@ public:
 
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
-			std::copy_n(other.cbegin(), Other_Capacity, begin());
+			std::copy_n(other.cbegin(), other.size(), begin());
 		}
 		else
 		{
@@ -328,19 +371,123 @@ public:
 				{
 					std::destroy_n(begin() + other.size(), _size - other.size());
 				}
-				_size = other.size();
+				
 			}
 		}
+
+		_size = other.size();
 
 		return *this;
 	}
 
-	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
+	constexpr static_vector& operator=(std::initializer_list<T> values)
+	{
+		const auto count = values.size();
+
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			std::copy_n(values.begin(), count, begin());
+		}
+		else
+		{
+			if (_size <= count)
+			{
+				std::copy_n(values.begin(), _size, begin());
+				std::uninitialized_copy_n(values.begin() + _size, count - _size, begin() + _size);
+				_size = count;
+			}
+			else
+			{
+				std::copy_n(values.begin(), count, begin());
+				if constexpr (!std::is_trivially_destructible_v<T>)
+				{
+					std::destroy_n(begin() + count, _size - count);
+				}
+				_size = count;
+			}
+		}
+	}
+
+	constexpr reference operator[] (std::size_t index) noexcept
+	{
+		return *reinterpret_cast<T*>(&_data[index]);
+	}
+
+	constexpr const_reference operator[] (std::size_t index) const noexcept
+	{
+		return *reinterpret_cast<const T*>(&_data[index]);
+	}
+
+	constexpr reference at(std::size_t index) 
+	{
+		if (index > _size - 1)
+		{
+			throw std::out_of_range("Index out of bounds!\n");
+		}
+
+		return *reinterpret_cast<T*>(&_data[index]);
+	}
+
+	constexpr const_reference at(std::size_t index) const 
+	{
+		if (index > _size - 1)
+		{
+			throw std::out_of_range("Index out of bounds!\n");
+		}
+
+		return *reinterpret_cast<const T*>(&_data[index]);
+	}
+
+	constexpr void push_back(const T& val)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), val);
+		_size++;
+	}
+
+	constexpr void push_back(T&& val)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), std::forward<T>(val));
+		_size++;
+	}
+
+	template <typename ... Args>
+	constexpr void emplace_back(Args&& ... args)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), std::forward<T>(val)...);
+		_size++;
+	}
+
+	constexpr clear() noexcept (noexcept(no_throw_destructible))
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
 			std::destroy_n(begin(), _size);
 		}
+	}
+
+	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
+	{
+		clear();
 	}
 
 	constexpr std::size_t size() const noexcept
@@ -385,5 +532,35 @@ public:
 	constexpr bool empty() const noexcept
 	{
 		return _size == 0;
+	}
+
+	constexpr reference front() noexcept
+	{
+		return *reinterpret_cast<T*>(&_data[0]);
+	}
+
+	constexpr const_reference front() const noexcept
+	{
+		return *reinterpret_cast<const T*>(&_data[0]);
+	}
+
+	constexpr reference back() noexcept
+	{
+		return *reinterpret_cast<T*>(&_data[_size - 1]);
+	}
+
+	constexpr const_reference back() const noexcept
+	{
+		return *reinterpret_cast<const T*>(&_data[_size - 1]);
+	}
+
+	constexpr pointer data() noexcept
+	{
+		return reinterpret_cast<T*>(&_data[0]);
+	}
+
+	constexpr const_pointer data() const noexcept
+	{
+		return reinterpret_cast<const T*>(&_data[0]);
 	}
 };
