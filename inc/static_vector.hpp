@@ -5,6 +5,12 @@
 #include <algorithm>
 #include <new>
 
+#ifdef _DEBUG
+	constexpr static bool STATIC_VECTOR_DEBUGGING = true;
+#else
+	constexpr static bool STATIC_VECTOR_DEBUGGING = false;
+#endif // _DEBUG
+
 template <typename T, size_t Capacity>
 class static_vector
 {
@@ -290,6 +296,8 @@ public:
 		}
 
 		std::uninitialized_fill_n(begin(), count, value);
+
+		_size = count;
 	}
 
 	constexpr static_vector(std::size_t count)
@@ -421,13 +429,29 @@ public:
 		return *this;
 	}
 
-	constexpr reference operator[] (std::size_t index) noexcept
+	constexpr reference operator[] (std::size_t index) noexcept(noexcept(!STATIC_VECTOR_DEBUGGING))
 	{
+		if (STATIC_VECTOR_DEBUGGING)
+		{
+			if (index > _size - 1)
+			{
+				throw std::out_of_range("Index out of bounds!\n");
+			}
+		}
+
 		return *reinterpret_cast<T*>(&_data[index]);
 	}
 
-	constexpr const_reference operator[] (std::size_t index) const noexcept
+	constexpr const_reference operator[] (std::size_t index) const noexcept(noexcept(!STATIC_VECTOR_DEBUGGING))
 	{
+		if (STATIC_VECTOR_DEBUGGING)
+		{
+			if (index > _size - 1)
+			{
+				throw std::out_of_range("Index out of bounds!\n");
+			}
+		}
+
 		return *reinterpret_cast<const T*>(&_data[index]);
 	}
 
@@ -473,11 +497,14 @@ public:
 		_size++;
 	}
 
-	constexpr void pop_back()
+	constexpr void pop_back() noexcept(noexcept(!STATIC_VECTOR_DEBUGGING && no_throw_destructible))
 	{
-		if (empty())
+		if (STATIC_VECTOR_DEBUGGING)
 		{
-			throw std::runtime_error("Can't pop from empty vector!\n");
+			if (empty())
+			{
+				throw std::runtime_error("Can't pop from empty vector!\n");
+			}
 		}
 
 		if constexpr (!std::is_trivially_destructible_v<T>)
@@ -502,12 +529,25 @@ public:
 
 	constexpr void clear() noexcept (noexcept(no_throw_destructible))
 	{
-		if constexpr (!std::is_trivially_destructible_v<T>)
+		if constexpr (std::is_trivially_destructible_v<T>)
 		{
-			std::destroy_n(begin(), _size);
+			_size = 0;
 		}
-
-		_size = 0;
+		else
+		{
+			if (no_throw_destructible)
+			{
+				std::destroy_n(begin(), size());
+				_size = 0;
+			}
+			else
+			{
+				while (!empty())
+				{
+					pop_back();
+				}
+			}
+		}
 	}
 
 	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
