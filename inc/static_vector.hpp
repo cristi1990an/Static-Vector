@@ -17,10 +17,6 @@ class static_vector
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
 	std::size_t _size = 0;
 
-	static constexpr bool no_throw_default_construction = std::is_nothrow_default_constructible_v<T>;
-	static constexpr bool no_throw_destructible = std::is_nothrow_destructible_v<T>;
-	static constexpr bool no_throw_copyable = std::is_nothrow_copy_assignable_v<T>;
-
 public:
 
 	struct iterator
@@ -288,7 +284,7 @@ public:
 
 	constexpr static_vector() noexcept = default;
 
-	constexpr static_vector(std::size_t count, const T& value) 
+	constexpr static_vector(std::size_t count, const T& value) noexcept (std::is_nothrow_copy_constructible_v<T>)
 	{
 		if (count > Capacity)
 		{
@@ -300,7 +296,7 @@ public:
 		_size = count;
 	}
 
-	constexpr static_vector(std::size_t count)
+	constexpr static_vector(std::size_t count) noexcept (std::is_nothrow_default_constructible_v<T>)
 	{
 		if (count > Capacity)
 		{
@@ -313,7 +309,7 @@ public:
 	}
 
 	template<typename Iterator>
-	constexpr static_vector(Iterator first, Iterator last)
+	constexpr static_vector(Iterator first, Iterator last) noexcept (std::is_nothrow_copy_constructible_v<T>)
 	{
 		const auto count = std::distance(first, last);
 
@@ -327,7 +323,8 @@ public:
 		_size = count;
 	}
 
-	constexpr static_vector(std::initializer_list<T> values)
+	template <typename U> requires std::constructible_from<T, U>
+	constexpr static_vector(std::initializer_list<U> values) noexcept (std::is_nothrow_constructible_v<T, U>)
 	{
 		const auto count = values.size();
 
@@ -342,7 +339,7 @@ public:
 	}
 
 	template<std::size_t Other_Capacity>
-	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable&& no_throw_destructible && (Other_Capacity <= Capacity)))
+	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -358,7 +355,7 @@ public:
 	}
 
 	template<std::size_t Other_Capacity>
-	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (noexcept(no_throw_copyable && no_throw_destructible && (Other_Capacity <= Capacity)))
+	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -429,7 +426,7 @@ public:
 		return *this;
 	}
 
-	constexpr reference operator[] (std::size_t index) noexcept(noexcept(!STATIC_VECTOR_DEBUGGING))
+	constexpr reference operator[] (std::size_t index) noexcept(!STATIC_VECTOR_DEBUGGING)
 	{
 		if (STATIC_VECTOR_DEBUGGING)
 		{
@@ -442,7 +439,7 @@ public:
 		return *reinterpret_cast<T*>(&_data[index]);
 	}
 
-	constexpr const_reference operator[] (std::size_t index) const noexcept(noexcept(!STATIC_VECTOR_DEBUGGING))
+	constexpr const_reference operator[] (std::size_t index) const noexcept(!STATIC_VECTOR_DEBUGGING)
 	{
 		if (STATIC_VECTOR_DEBUGGING)
 		{
@@ -497,7 +494,7 @@ public:
 		_size++;
 	}
 
-	constexpr void pop_back() noexcept(noexcept(!STATIC_VECTOR_DEBUGGING && no_throw_destructible))
+	constexpr void pop_back() noexcept(!STATIC_VECTOR_DEBUGGING && std::is_nothrow_destructible_v<T>)
 	{
 		if (STATIC_VECTOR_DEBUGGING)
 		{
@@ -527,7 +524,7 @@ public:
 		_size++;
 	}
 
-	constexpr void clear() noexcept (noexcept(no_throw_destructible))
+	constexpr void clear() noexcept (std::is_nothrow_destructible_v<T>)
 	{
 		if constexpr (std::is_trivially_destructible_v<T>)
 		{
@@ -535,7 +532,7 @@ public:
 		}
 		else
 		{
-			if (no_throw_destructible)
+			if (std::is_nothrow_destructible_v<T>)
 			{
 				std::destroy_n(begin(), size());
 				_size = 0;
@@ -550,7 +547,7 @@ public:
 		}
 	}
 
-	constexpr ~static_vector() noexcept (noexcept(no_throw_destructible))
+	constexpr ~static_vector() noexcept (std::is_nothrow_destructible_v<T>)
 	{
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
@@ -563,7 +560,7 @@ public:
 		return _size;
 	}
 
-	constexpr void resize(std::size_t new_size) noexcept (noexcept(no_throw_default_construction && no_throw_destructible))
+	constexpr void resize(std::size_t new_size) noexcept (std::is_nothrow_default_constructible_v<T> && std::is_nothrow_destructible_v<T>)
 	{
 		if (new_size > Capacity)
 			throw std::runtime_error("Can't resize beyond capacity!\n");
