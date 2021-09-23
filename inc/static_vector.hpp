@@ -28,99 +28,99 @@ public:
 		using reference = T&;
 		using iterator_category = std::contiguous_iterator_tag;
 
-		iterator() noexcept : ptr{} {};
-		iterator(const iterator&) noexcept = default;
-		iterator(iterator&&) noexcept = default;
-		iterator(pointer other) noexcept : ptr{ other } {}
-		iterator(bool) = delete;
+		constexpr iterator() noexcept : ptr{} {};
+		constexpr iterator(const iterator&) noexcept = default;
+		constexpr iterator(iterator&&) noexcept = default;
+		constexpr iterator(pointer other) noexcept : ptr{ other } {}
+		constexpr iterator(bool) = delete;
 
-		iterator& operator=(const iterator&) = default;
+		constexpr iterator& operator=(const iterator&) = default;
 
-		iterator& operator=(iterator&&) = default;
+		constexpr iterator& operator=(iterator&&) = default;
 
-		reference operator* () const noexcept
+		constexpr reference operator* () const noexcept
 		{
 			return *ptr;
 		}
 
-		pointer operator-> () const noexcept
+		constexpr pointer operator-> () const noexcept
 		{
 			return ptr;
 		}
 
-		iterator& operator++ () noexcept
+		constexpr iterator& operator++ () noexcept
 		{
 			++ptr;
 			return *this;
 		}
 
-		iterator operator++(int) noexcept
+		constexpr iterator operator++(int) noexcept
 		{
 			return iterator(ptr++);
 		}
 
-		iterator& operator-- () noexcept
+		constexpr iterator& operator-- () noexcept
 		{
 			--ptr;
 			return *this;
 		}
 
-		iterator operator--(int) noexcept
+		constexpr iterator operator--(int) noexcept
 		{
 			return iterator(ptr--);
 		}
 
-		iterator& operator+=(const ptrdiff_t offset) noexcept
+		constexpr iterator& operator+=(const ptrdiff_t offset) noexcept
 		{
 			ptr += offset;
 			return *this;
 		}
 
-		iterator& operator-=(const ptrdiff_t offset) noexcept
+		constexpr iterator& operator-=(const ptrdiff_t offset) noexcept
 		{
 			ptr -= offset;
 			return *this;
 		}
 
-		reference operator[](const size_t offset) const noexcept
+		constexpr reference operator[](const size_t offset) const noexcept
 		{
 			return ptr[offset];
 		}
 
-		friend bool operator==(const iterator it_a, const iterator it_b) noexcept
+		constexpr friend bool operator==(const iterator it_a, const iterator it_b) noexcept
 		{
 			return it_a.ptr == it_b.ptr;
 		}
 
-		friend bool operator!=(const iterator it_a, const iterator it_b) noexcept
+		constexpr friend bool operator!=(const iterator it_a, const iterator it_b) noexcept
 		{
 			return it_a.ptr != it_b.ptr;
 		}
 
-		friend iterator operator+(const iterator it, const size_t offset) noexcept
+		constexpr friend iterator operator+(const iterator it, const size_t offset) noexcept
 		{
 			T* result = it.ptr + offset;
 			return iterator(result);
 		}
 
-		friend iterator operator+(const size_t offset, const iterator& it) noexcept
+		constexpr friend iterator operator+(const size_t offset, const iterator& it) noexcept
 		{
 			auto aux = offset + it.ptr;
 			return iterator(aux);
 		}
 
-		friend iterator operator-(const iterator it, const size_t offset) noexcept
+		constexpr friend iterator operator-(const iterator it, const size_t offset) noexcept
 		{
 			T* aux = it.ptr - offset;
 			return iterator(aux);
 		}
 
-		friend difference_type operator-(const iterator a, const iterator b) noexcept
+		constexpr friend difference_type operator-(const iterator a, const iterator b) noexcept
 		{
 			return a.ptr - b.ptr;
 		}
 
-		friend auto operator<=>(const iterator a, const iterator b) noexcept
+		constexpr friend auto operator<=>(const iterator a, const iterator b) noexcept
 		{
 			return a.ptr <=> b.ptr;
 		}
@@ -137,117 +137,352 @@ public:
 		using reference = const T&;
 		using iterator_category = std::contiguous_iterator_tag;
 
-		const_iterator() noexcept : ptr{} {};
-		const_iterator(const const_iterator&) noexcept = default;
-		const_iterator(const_iterator&&) noexcept = default;
-		const_iterator(pointer other) noexcept : ptr{ other } {}
+		constexpr const_iterator() noexcept : ptr{} {};
+		constexpr const_iterator(const const_iterator&) noexcept = default;
+		constexpr const_iterator(const_iterator&&) noexcept = default;
+		constexpr const_iterator(pointer other) noexcept : ptr{ other } {}
 
-		const_iterator(bool) = delete;
+		constexpr const_iterator(bool) = delete;
 
-		const_iterator(const iterator other) noexcept : ptr{ other.ptr } {}
+		constexpr const_iterator(const iterator other) noexcept : ptr{ other.ptr } {}
 
-		const_iterator& operator=(const const_iterator&) noexcept = default;
+		constexpr const_iterator& operator=(const const_iterator&) noexcept = default;
 
-		const_iterator& operator=(const_iterator&&) noexcept = default;
+		constexpr const_iterator& operator=(const_iterator&&) noexcept = default;
 
-		const_iterator& operator= (const pointer other) noexcept
+		constexpr const_iterator& operator= (const pointer other) noexcept
 		{
 			ptr = other;
 			return (*this);
 		}
 
-		reference operator* () const noexcept
+		constexpr reference operator* () const noexcept
 		{
 			return *ptr;
 		}
 
-		pointer operator-> () const noexcept
+		constexpr pointer operator-> () const noexcept
 		{
 			return ptr;
 		}
 
-		const_iterator& operator++ () noexcept
+		constexpr const_iterator& operator++ () noexcept
 		{
 			++ptr;
 			return *this;
 		}
 
-		const_iterator operator++(int) noexcept
+		constexpr const_iterator operator++(int) noexcept
 		{
 			return const_iterator(ptr++);
 		}
 
-		const_iterator& operator-- () noexcept
+		constexpr const_iterator& operator-- () noexcept
 		{
 			--ptr;
 			return *this;
 		}
 
-		const_iterator operator--(int) noexcept
+		constexpr const_iterator operator--(int) noexcept
 		{
 			return const_iterator(ptr--);
 		}
 
-		const_iterator& operator+=(const size_t offset) noexcept
+		constexpr const_iterator& operator+=(const size_t offset) noexcept
 		{
 			ptr += offset;
 			return *this;
 		}
 
-		const_iterator& operator-=(const size_t offset) noexcept
+		constexpr const_iterator& operator-=(const size_t offset) noexcept
 		{
 			ptr -= offset;
 			return *this;
 		}
 
-		reference operator[](const size_t offset) const noexcept
+		constexpr reference operator[](const size_t offset) const noexcept
 		{
 			return ptr[offset];
 		}
 
-		friend bool operator==(const const_iterator it_a, const const_iterator it_b) noexcept
+		constexpr friend bool operator==(const const_iterator it_a, const const_iterator it_b) noexcept
 		{
 			return it_a.ptr == it_b.ptr;
 		}
 
-		friend bool operator==(const const_iterator it, const pointer adr) noexcept
+		constexpr friend bool operator==(const const_iterator it, const pointer adr) noexcept
 		{
 			return it.ptr == adr;
 		}
 
-		friend bool operator!=(const const_iterator it_a, const const_iterator it_b) noexcept
+		constexpr friend bool operator!=(const const_iterator it_a, const const_iterator it_b) noexcept
 		{
 			return it_a.ptr != it_b.ptr;
 		}
 
-		friend bool operator!=(const const_iterator it, const pointer adr) noexcept
+		constexpr friend bool operator!=(const const_iterator it, const pointer adr) noexcept
 		{
 			return it.ptr != adr;
 		}
 
-		friend const_iterator operator+(const const_iterator& it, const size_t offset) noexcept
+		constexpr friend const_iterator operator+(const const_iterator& it, const size_t offset) noexcept
 		{
 			return const_iterator(it.ptr + offset);
 		}
 
-		friend const_iterator operator+(const size_t offset, const const_iterator it) noexcept
+		constexpr friend const_iterator operator+(const size_t offset, const const_iterator it) noexcept
 		{
 			return const_iterator(offset + it.ptr);
 		}
 
-		friend const_iterator operator-(const const_iterator it, const size_t offset) noexcept
+		constexpr friend const_iterator operator-(const const_iterator it, const size_t offset) noexcept
 		{
 			return const_iterator(it.ptr - offset);
 		}
 
-		friend difference_type operator-(const const_iterator a, const const_iterator b) noexcept
+		constexpr friend difference_type operator-(const const_iterator a, const const_iterator b) noexcept
 		{
 			return a.ptr - b.ptr;
 		}
 
-		friend auto operator<=>(const const_iterator a, const const_iterator b) noexcept
+		constexpr friend auto operator<=>(const const_iterator a, const const_iterator b) noexcept
 		{
 			return a.ptr <=> b.ptr;
+		}
+
+	private:
+
+		pointer ptr;
+	};
+	struct reverse_iterator
+	{
+		using difference_type = ptrdiff_t;
+		using value_type = T;
+		using element_type = T;
+		using pointer = T*;
+		using reference = T&;
+		using iterator_category = std::contiguous_iterator_tag;
+
+		constexpr reverse_iterator() noexcept : ptr{} {};
+		constexpr reverse_iterator(const reverse_iterator&) noexcept = default;
+		constexpr reverse_iterator(reverse_iterator&&) noexcept = default;
+		constexpr reverse_iterator(pointer other) noexcept : ptr{ other } {}
+		constexpr reverse_iterator(bool) = delete;
+
+		constexpr reverse_iterator& operator=(const reverse_iterator&) = default;
+
+		constexpr reverse_iterator& operator=(reverse_iterator&&) = default;
+
+		constexpr reference operator* () const noexcept
+		{
+			return *ptr;
+		}
+
+		constexpr pointer operator-> () const noexcept
+		{
+			return ptr;
+		}
+
+		constexpr reverse_iterator& operator++ () noexcept
+		{
+			++ptr;
+			return *this;
+		}
+
+		constexpr reverse_iterator operator++(int) noexcept
+		{
+			return iterator(ptr--);
+		}
+
+		constexpr reverse_iterator& operator-- () noexcept
+		{
+			++ptr;
+			return *this;
+		}
+
+		constexpr reverse_iterator operator--(int) noexcept
+		{
+			return iterator(ptr++);
+		}
+
+		constexpr reverse_iterator& operator+=(const ptrdiff_t offset) noexcept
+		{
+			ptr -= offset;
+			return *this;
+		}
+
+		constexpr reverse_iterator& operator-=(const ptrdiff_t offset) noexcept
+		{
+			ptr += offset;
+			return *this;
+		}
+
+		constexpr reverse_iterator operator[](const size_t offset) const noexcept
+		{
+			return ptr[offset];
+		}
+
+		constexpr friend bool operator==(const reverse_iterator it_a, const reverse_iterator it_b) noexcept
+		{
+			return it_a.ptr == it_b.ptr;
+		}
+
+		constexpr friend bool operator!=(const reverse_iterator it_a, const reverse_iterator it_b) noexcept
+		{
+			return it_a.ptr != it_b.ptr;
+		}
+
+		constexpr friend reverse_iterator operator+(const reverse_iterator it, const size_t offset) noexcept
+		{
+			T* result = it.ptr - offset;
+			return reverse_iterator(result);
+		}
+
+		constexpr friend reverse_iterator operator+(const size_t offset, const reverse_iterator& it) noexcept
+		{
+			auto aux = offset - it.ptr;
+			return reverse_iterator(aux);
+		}
+
+		constexpr friend reverse_iterator operator-(const reverse_iterator it, const size_t offset) noexcept
+		{
+			T* aux = it.ptr + offset;
+			return iterator(aux);
+		}
+
+		constexpr friend difference_type operator-(const reverse_iterator a, const reverse_iterator b) noexcept
+		{
+			return a.ptr + b.ptr;
+		}
+
+		constexpr friend auto operator<=>(const reverse_iterator a, const reverse_iterator b) noexcept
+		{
+			return b.ptr <=> a.ptr;
+		}
+
+	private:
+		pointer ptr;
+	};
+	struct const_reverse_iterator
+	{
+		using difference_type = ptrdiff_t;
+		using value_type = T;
+		using element_type = T;
+		using pointer = const T*;
+		using reference = const T&;
+		using iterator_category = std::contiguous_iterator_tag;
+
+		constexpr const_reverse_iterator() noexcept : ptr{} {};
+		constexpr const_reverse_iterator(const const_reverse_iterator&) noexcept = default;
+		constexpr const_reverse_iterator(const_reverse_iterator&&) noexcept = default;
+		constexpr const_reverse_iterator(pointer other) noexcept : ptr{ other } {}
+
+		constexpr const_reverse_iterator(bool) = delete;
+
+		constexpr const_reverse_iterator(const iterator other) noexcept : ptr{ other.ptr } {}
+
+		constexpr const_reverse_iterator& operator=(const const_reverse_iterator&) noexcept = default;
+
+		constexpr const_reverse_iterator& operator=(const_reverse_iterator&&) noexcept = default;
+
+		constexpr const_reverse_iterator& operator= (const pointer other) noexcept
+		{
+			ptr = other;
+			return (*this);
+		}
+
+		constexpr reference operator* () const noexcept
+		{
+			return *ptr;
+		}
+
+		constexpr pointer operator-> () const noexcept
+		{
+			return ptr;
+		}
+
+		constexpr const_reverse_iterator& operator++ () noexcept
+		{
+			--ptr;
+			return *this;
+		}
+
+		constexpr const_reverse_iterator operator++(int) noexcept
+		{
+			return const_reverse_iterator(ptr--);
+		}
+
+		constexpr const_reverse_iterator& operator-- () noexcept
+		{
+			++ptr;
+			return *this;
+		}
+
+		constexpr const_reverse_iterator operator--(int) noexcept
+		{
+			return const_reverse_iterator(ptr++);
+		}
+
+		constexpr const_reverse_iterator& operator+=(const size_t offset) noexcept
+		{
+			ptr -= offset;
+			return *this;
+		}
+
+		constexpr const_reverse_iterator& operator-=(const size_t offset) noexcept
+		{
+			ptr += offset;
+			return *this;
+		}
+
+		constexpr reference operator[](const size_t offset) const noexcept
+		{
+			return ptr[offset];
+		}
+
+		constexpr friend bool operator==(const const_reverse_iterator it_a, const const_reverse_iterator it_b) noexcept
+		{
+			return it_a.ptr == it_b.ptr;
+		}
+
+		constexpr friend bool operator==(const const_reverse_iterator it, const pointer adr) noexcept
+		{
+			return it.ptr == adr;
+		}
+
+		constexpr friend bool operator!=(const const_reverse_iterator it_a, const const_reverse_iterator it_b) noexcept
+		{
+			return it_a.ptr != it_b.ptr;
+		}
+
+		constexpr friend bool operator!=(const const_reverse_iterator it, const pointer adr) noexcept
+		{
+			return it.ptr != adr;
+		}
+
+		constexpr friend const_reverse_iterator operator+(const const_reverse_iterator& it, const size_t offset) noexcept
+		{
+			return const_reverse_iterator(it.ptr - offset);
+		}
+
+		constexpr friend const_reverse_iterator operator+(const size_t offset, const const_reverse_iterator it) noexcept
+		{
+			return const_reverse_iterator(offset - it.ptr);
+		}
+
+		constexpr friend const_reverse_iterator operator-(const const_reverse_iterator it, const size_t offset) noexcept
+		{
+			return const_reverse_iterator(it.ptr + offset);
+		}
+
+		constexpr friend difference_type operator-(const const_reverse_iterator a, const const_reverse_iterator b) noexcept
+		{
+			return a.ptr + b.ptr;
+		}
+
+		constexpr friend auto operator<=>(const const_reverse_iterator a, const const_reverse_iterator b) noexcept
+		{
+			return b.ptr <=> a.ptr;;
 		}
 
 	private:
@@ -271,15 +506,45 @@ public:
 	{
 		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size])));
 	}
-
+	constexpr const_iterator begin() const noexcept
+	{
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
+	}
+	constexpr const_iterator end() const noexcept
+	{
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+	}
 	constexpr const_iterator cbegin() const noexcept
 	{
 		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
 	}
-
 	constexpr const_iterator cend() const noexcept
 	{
 		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+	}
+	constexpr reverse_iterator rbegin() noexcept
+	{
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+	}
+	constexpr reverse_iterator rend() noexcept
+	{
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
+	}
+	constexpr const_reverse_iterator rbegin() const noexcept
+	{
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+	}
+	constexpr const_reverse_iterator rend() const noexcept
+	{
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
+	}
+	constexpr const_reverse_iterator crbegin() const noexcept
+	{
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+	}
+	constexpr const_reverse_iterator crend() const noexcept
+	{
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 
 	constexpr static_vector() noexcept = default;
@@ -545,6 +810,38 @@ public:
 				}
 			}
 		}
+	}
+
+	constexpr iterator insert(iterator pos, const T& value)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, insertion not allowed!\n");
+		}
+		
+		std::construct_at(std::to_address(end()), std::move(*(end() - 1)));
+
+		std::move_backward(pos, end() - 1, end());
+
+		*pos = value;
+
+		_size++;
+	}
+
+	constexpr iterator insert(const_iterator pos, const T& value)
+	{
+		if (_size == Capacity)
+		{
+			throw std::runtime_error("Vector is at full capacity, insertion not allowed!\n");
+		}
+
+		std::construct_at(std::to_address(end()), std::move(*(end() - 1)));
+
+		std::move_backward(pos, cend() - 1, end());
+
+		**reinterpret_cast<iterator*>(&pos) = value;
+
+		_size++;
 	}
 
 	constexpr ~static_vector() noexcept (std::is_nothrow_destructible_v<T>)

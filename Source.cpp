@@ -22,12 +22,12 @@ struct Test
 
 int main()
 {
-	static_vector<Test, 10> vec;
+	static_vector<std::string, 10> vec = { "Cristi", "e", "foarte", "tare" };
 
-	auto vec_2 = vec;
+	vec.insert(vec.cbegin() + 1, "nu");
 
-	static_vector<Test, 20> vec_3;
-
-	vec_3 = vec;
-
+	for (const auto& word : vec)
+	{
+		std::cout << word << ' ';
+	}
 }
