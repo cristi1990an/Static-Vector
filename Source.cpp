@@ -22,6 +22,7 @@ struct Test
 
 int main()
 {
+	static_assert(std::is_trivially_destructible_v<static_vector<int,3>>);
 	static_vector<std::string, 10> vec = { "Cristi", "e", "foarte", "tare" };
 
 	vec.insert(vec.cbegin() + 1, "nu");
