@@ -31,4 +31,11 @@ int main()
 	{
 		std::cout << word << ' ';
 	}
+	std::cout << "\n";
+
+	// test destructor
+	{
+	static_vector<Test, 3> destruct_test;
+	destruct_test.emplace_back();
+	}
 }
