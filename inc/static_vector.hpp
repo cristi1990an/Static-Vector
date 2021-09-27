@@ -550,6 +550,7 @@ public:
 	constexpr static_vector() noexcept = default;
 
 	constexpr static_vector(std::size_t count, const T& value) noexcept (std::is_nothrow_copy_constructible_v<T>)
+		requires (std::is_copy_constructible_v<T>)
 	{
 		if (count > Capacity)
 		{
@@ -562,6 +563,7 @@ public:
 	}
 
 	constexpr static_vector(std::size_t count) noexcept (std::is_nothrow_default_constructible_v<T>)
+		requires (std::is_default_constructible_v<T>)
 	{
 		if (count > Capacity)
 		{
@@ -573,7 +575,7 @@ public:
 		_size = count;
 	}
 
-	template<typename Iterator>
+	template<typename Iterator> requires std::constructible_from<T, typename Iterator::value_type>
 	constexpr static_vector(Iterator first, Iterator last) noexcept (std::is_nothrow_copy_constructible_v<T>)
 	{
 		const auto count = std::distance(first, last);
@@ -603,7 +605,7 @@ public:
 		_size = count;
 	}
 
-	template<std::size_t Other_Capacity>
+	template<std::size_t Other_Capacity> requires std::copy_constructible<T>
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
@@ -614,12 +616,12 @@ public:
 			}
 		}
 
-		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
+		std::uninitialized_copy_n(other.cbegin(), other.size(), begin()); 
 
 		_size = other.size();
 	}
 
-	template<std::size_t Other_Capacity>
+	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
 	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
@@ -656,7 +658,8 @@ public:
 		return *this;
 	}
 
-	constexpr static_vector& operator=(std::initializer_list<T> values)
+	template <typename U> requires (std::constructible_from<T, U> && std::is_copy_assignable_v<T> && std::copy_constructible<T>)
+	constexpr static_vector& operator=(std::initializer_list<U> values)
 	{
 		const auto count = values.size();
 
@@ -689,6 +692,71 @@ public:
 		_size = count;
 
 		return *this;
+	}
+
+	template <typename U> requires (std::constructible_from<T, U>&& std::is_copy_assignable_v<T>&& std::copy_constructible<T>)
+	constexpr void assign(std::initializer_list<U> values)
+	{
+		const auto count = values.size();
+
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			std::copy_n(values.begin(), count, begin());
+		}
+		else
+		{
+			if (_size <= count)
+			{
+				std::copy_n(values.begin(), _size, begin());
+				std::uninitialized_copy_n(values.begin() + _size, count - _size, begin() + _size);
+			}
+			else
+			{
+				std::copy_n(values.begin(), count, begin());
+				if constexpr (!std::is_trivially_destructible_v<T>)
+				{
+					std::destroy_n(begin() + count, _size - count);
+				}
+			}
+		}
+
+		_size = count;
+	}
+
+	constexpr void assign(std::size_t count, const T& value)
+	{
+		if (count > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			std::fill_n(begin(), count, value);
+		}
+		else
+		{
+			if (_size <= count)
+			{
+				std::fill_n(begin(), count, value);
+				std::uninitialized_fill_n(begin() + _size, count - _size, value);
+			}
+			else
+			{
+				std::fill_n(begin(), count, value);
+				if constexpr (!std::is_trivially_copyable_v<T>)
+				{
+					std::destroy_n(begin() + count, _size - count);
+				}
+			}
+		}
+
+		_size = count;
 	}
 
 	constexpr reference operator[] (std::size_t index) noexcept(!STATIC_VECTOR_DEBUGGING)
@@ -929,4 +997,5 @@ public:
 	{
 		return reinterpret_cast<const T*>(&_data[0]);
 	}
-};
+
+}; 
