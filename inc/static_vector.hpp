@@ -547,7 +547,10 @@ public:
 		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 
-	constexpr static_vector() noexcept = default;
+	constexpr static_vector() noexcept : _size{ 0 }
+	{
+
+	}
 
 	constexpr static_vector(std::size_t count, const T& value) noexcept (std::is_nothrow_copy_constructible_v<T>)
 		requires (std::is_copy_constructible_v<T>)
@@ -624,6 +627,11 @@ public:
 	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
 	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
 	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
 		if constexpr (Other_Capacity > Capacity)
 		{
 			if (other._size > Capacity)
