@@ -894,31 +894,36 @@ public:
 		*pos = value;
 
 		_size++;
+
+		return pos;
 	}
 
 	constexpr iterator insert(const_iterator pos, const T& value)
 	{
-		if (_size == Capacity)
-		{
-			throw std::runtime_error("Vector is at full capacity, insertion not allowed!\n");
-		}
-
-		std::construct_at(std::to_address(end()), std::move(*(end() - 1)));
-
-		std::move_backward(pos, cend() - 1, end());
-
-		**reinterpret_cast<iterator*>(&pos) = value;
-
-		_size++;
+		auto mutable_pos = *reinterpret_cast<iterator*>(&pos);
+		return this->insert(mutable_pos, value);
 	}
 
+	// If T is trivially_destructible, static_vector<T> should be too.
+	// To get trivial destructibility, a class needs to default ~static_vector
+	// Use a requires clause to select the right version (default vs destroy_n)
+	//
+	// Citation--https://en.cppreference.com/w/cpp/language/destructor#Trivial_destructor
+	// See also
+	// - https://www.sandordargo.com/blog/2021/06/16/multiple-destructors-with-cpp-concepts
+	// - Sy Brand's talk "How to write well-behaved value wrappers",
+	//    https://youtu.be/sQcPte0JNmE?t=1147
+	//
+	// Unfortunately, this won't work on clang yet
+	constexpr ~static_vector() = default;
 	constexpr ~static_vector() noexcept (std::is_nothrow_destructible_v<T>)
+		requires(!std::is_trivially_destructible_v<T>)
 	{
-		if constexpr (!std::is_trivially_destructible_v<T>)
-		{
-			std::destroy_n(begin(), _size);
-		}
+		std::destroy_n(begin(), _size);
 	}
+
+	static_assert(std::is_trivially_destructible_v<T>
+			    ==std::is_trivially_destructible_v<T>);
 
 	constexpr std::size_t size() const noexcept
 	{
@@ -997,5 +1002,4 @@ public:
 	{
 		return reinterpret_cast<const T*>(&_data[0]);
 	}
-
-}; 
+};

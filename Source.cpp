@@ -22,5 +22,20 @@ struct Test
 
 int main()
 {
-	
+	static_assert(std::is_trivially_destructible_v<static_vector<int,3>>);
+	static_vector<std::string, 10> vec = { "Cristi", "e", "foarte", "tare" };
+
+	vec.insert(vec.cbegin() + 1, "nu");
+
+	for (const auto& word : vec)
+	{
+		std::cout << word << ' ';
+	}
+	std::cout << "\n";
+
+	// test destructor
+	{
+	static_vector<Test, 3> destruct_test;
+	destruct_test.emplace_back();
+	}
 }
