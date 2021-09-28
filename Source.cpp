@@ -14,6 +14,16 @@ struct Test
 		std::cout << "Object constructed!\n";
 	}
 
+	Test(Test&&) noexcept
+	{
+		std::cout << "Move constructor called!\n";
+	}
+
+	Test(const Test&)
+	{
+		std::cout << "Copy constructor called!\n";
+	}
+
 	~Test()
 	{
 		std::cout << "Object destructed!\n";
@@ -22,21 +32,7 @@ struct Test
 
 int main()
 {
-	static_assert(std::is_trivially_destructible_v<static_vector<int,3>>);
-	static_assert(!std::is_trivially_destructible_v<static_vector<Test, 3>>);
-	static_vector<std::string, 10> vec = { "Cristi", "e", "foarte", "tare" };
+	static_vector<Test, 1> v1(1);
 
-	vec.insert(vec.cbegin() + 1, "nu");
-
-	for (const auto& word : vec)
-	{
-		std::cout << word << ' ';
-	}
-	std::cout << "\n";
-
-	// test destructor
-	{
-	static_vector<Test, 3> destruct_test;
-	destruct_test.emplace_back();
-	}
+	static_vector<Test, 1> v2 = std::move(v1);
 }

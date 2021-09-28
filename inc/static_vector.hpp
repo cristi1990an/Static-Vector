@@ -547,10 +547,10 @@ public:
 		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 
-	constexpr static_vector() noexcept : _size{ 0 }
-	{
+	static constexpr bool no_throw_move_constructor_requirements = (std::is_nothrow_move_assignable_v<T> && std::is_nothrow_destructible_v<T>)
+		|| (!std::is_nothrow_move_assignable_v<T> && std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T>);
 
-	}
+	constexpr static_vector() noexcept = default;
 
 	constexpr static_vector(std::size_t count, const T& value) noexcept (std::is_nothrow_copy_constructible_v<T>)
 		requires (std::is_copy_constructible_v<T>)
@@ -624,8 +624,31 @@ public:
 		_size = other.size();
 	}
 
+	template<std::size_t Other_Capacity> requires std::move_constructible<T>
+	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (no_throw_move_constructor_requirements && (Other_Capacity <= Capacity))
+	{
+		if constexpr (Other_Capacity > Capacity)
+		{
+			if (other.size() > Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+			}
+		}
+
+		if constexpr (std::is_nothrow_move_constructible_v<T>)
+		{
+			std::uninitialized_move_n(other.begin(), other.size(), begin());
+		}
+		else
+		{
+			std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
+		}
+
+		_size = other.size();
+	}
+
 	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
-	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
+	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if (this == &other)
 		{
