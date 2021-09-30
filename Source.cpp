@@ -41,5 +41,5 @@ int main()
 	static_vector<Test, 10> v1(5);
 	static_vector<Test, 10> v2(7);
 
-	v1 = std::move(v2);
+	v1 = v2;
 }
