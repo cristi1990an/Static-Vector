@@ -9,30 +9,37 @@
 
 struct Test
 {
-	Test()
-	{
-		std::cout << "Object constructed!\n";
-	}
+	Test() = default;
 
-	Test(Test&&) noexcept
+	Test(Test&&) 
 	{
 		std::cout << "Move constructor called!\n";
 	}
 
-	Test(const Test&)
+	Test(const Test&) noexcept
 	{
 		std::cout << "Copy constructor called!\n";
 	}
 
-	~Test()
+	Test& operator=(Test&&) noexcept
 	{
-		std::cout << "Object destructed!\n";
+		std::cout << "Move assignment called!\n";
+		return *this;
 	}
+
+	Test& operator=(const Test&) noexcept
+	{
+		std::cout << "Copy assignment called!\n";
+		return *this;
+	}
+
+	~Test() = default;
 };
 
 int main()
 {
-	static_vector<Test, 1> v1(1);
+	static_vector<Test, 10> v1(5);
+	static_vector<Test, 10> v2(7);
 
-	static_vector<Test, 1> v2 = std::move(v1);
+	v1 = std::move(v2);
 }

@@ -547,8 +547,29 @@ public:
 		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 
-	static constexpr bool no_throw_move_constructor_requirements = (std::is_nothrow_move_assignable_v<T> && std::is_nothrow_destructible_v<T>)
-		|| (!std::is_nothrow_move_assignable_v<T> && std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T>);
+	static constexpr bool nothrow_move_constructor_requirements = (
+		// If we can't move either because move throws or isn't available, the move constructor depends on the copy constructible being nothrow, since that's what's going to be called instead
+	((!std::is_nothrow_move_constructible_v<T> || !std::is_move_constructible_v<T>) && std::is_nothrow_copy_constructible_v<T>) ||
+	// Otherwise we simply check if T is nothrow move constructible
+		(std::is_nothrow_move_constructible_v<T>));
+
+	// Both the move constructor and the move assignment operator are nothrow
+		static constexpr bool is_both_nothrow_move_constructible_and_move_assignable = std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+
+	// Both the move constructor and the move assignment operator are available
+		static constexpr bool both_move_constructible_and_move_assignable = std::is_move_constructible_v<T> && std::is_move_assignable_v<T>;
+
+	// Both the copy constructor and the copy assignment operator are nothrow
+		static constexpr bool is_both_nothrow_copy_constructible_and_copy_assignable = std::is_nothrow_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
+
+		static constexpr bool nothrow_move_assignment_requirements =
+	// All nothrow cases require the destructor to be nothrow since any surplus elements in the original array will be destructed
+		std::is_nothrow_destructible_v<T> &&
+	// If we can't move either because move throws or isn't available, the move assignment depends on the copy assignment/construction being nothrow, since that's what's going to be called instead.
+	// Here we check for both the move constructor and the move assignment operator, since both *could be called.
+		(((!is_both_nothrow_move_constructible_and_move_assignable || !both_move_constructible_and_move_assignable) && is_both_nothrow_copy_constructible_and_copy_assignable) ||
+	// Otherwise we simply check if T is nothrow move constructible and assignable
+		is_both_nothrow_move_constructible_and_move_assignable);
 
 	constexpr static_vector() noexcept = default;
 
@@ -624,8 +645,8 @@ public:
 		_size = other.size();
 	}
 
-	template<std::size_t Other_Capacity> requires std::move_constructible<T>
-	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (no_throw_move_constructor_requirements && (Other_Capacity <= Capacity))
+	template<std::size_t Other_Capacity> requires (std::move_constructible<T> || std::copy_constructible<T>)
+	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements && (Other_Capacity <= Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -635,20 +656,22 @@ public:
 			}
 		}
 
-		if constexpr (std::is_nothrow_move_constructible_v<T>)
+		if constexpr ((std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) && std::is_move_constructible_v<T>)
 		{
 			std::uninitialized_move_n(other.begin(), other.size(), begin());
 		}
 		else
 		{
-			std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
+			std::uninitialized_copy_n(other.begin(), other.size(), begin());
 		}
 
 		_size = other.size();
+
+		other.clear();
 	}
 
 	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
-	constexpr static_vector& operator =(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
+	constexpr static_vector& operator= (const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity <= Capacity))
 	{
 		if (this == &other)
 		{
@@ -657,7 +680,7 @@ public:
 
 		if constexpr (Other_Capacity > Capacity)
 		{
-			if (other._size > Capacity)
+			if (other.size() > Capacity)
 			{
 				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
 			}
@@ -687,6 +710,59 @@ public:
 		_size = other.size();
 
 		return *this;
+	}
+
+	template<std::size_t Other_Capacity> requires ((std::copy_constructible<T> && std::is_copy_assignable_v<T>) || (std::move_constructible<T> && std::is_move_assignable_v<T>))
+	constexpr static_vector& operator= (static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_assignment_requirements && (Other_Capacity <= Capacity))
+	{
+		// If T isn't both move_constructible_and_move_assignable or if they aren't nothrow, we'll just do a copy
+		if constexpr (!both_move_constructible_and_move_assignable || !is_both_nothrow_move_constructible_and_move_assignable)
+		{
+			(*this) = other; // This line does nothing?
+			other.clear();
+			return *this;
+		}
+		else
+		{
+			if (this == &other)
+			{
+				return *this;
+			}
+
+			if constexpr (Other_Capacity > Capacity)
+			{
+				if (other.size() > Capacity)
+				{
+					throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+				}
+			}
+
+			if constexpr (std::is_trivially_move_assignable_v<T>)
+			{
+				std::copy_n(std::make_move_iterator(other.begin()), other.size(), begin());
+			}
+			else
+			{
+				if (_size <= other.size())
+				{
+					std::copy_n(std::make_move_iterator(other.begin()), _size, begin());
+					std::uninitialized_move_n(other.begin() + _size, other.size() - _size, begin() + _size);
+				}
+				else
+				{
+					std::copy_n(std::make_move_iterator(other.begin()), other.size(), begin());
+					if constexpr (!std::is_trivially_destructible_v<T>)
+					{
+						std::destroy_n(begin() + other.size(), _size - other.size());
+					}
+				}
+			}
+
+			_size = other.size();
+			other.clear();
+
+			return *this;
+		}
 	}
 
 	template <typename U> requires (std::constructible_from<T, U> && std::is_copy_assignable_v<T> && std::copy_constructible<T>)
