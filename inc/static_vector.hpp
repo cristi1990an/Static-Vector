@@ -573,7 +573,7 @@ public:
 
 	constexpr static_vector() noexcept = default;
 
-	constexpr static_vector(std::size_t count, const T& value) noexcept (std::is_nothrow_copy_constructible_v<T>)
+	constexpr static_vector(std::size_t count, const T& value) 
 		requires (std::is_copy_constructible_v<T>)
 	{
 		if (count > Capacity)
@@ -586,7 +586,7 @@ public:
 		_size = count;
 	}
 
-	constexpr static_vector(std::size_t count) noexcept (std::is_nothrow_default_constructible_v<T>)
+	constexpr static_vector(std::size_t count) noexcept 
 		requires (std::is_default_constructible_v<T>)
 	{
 		if (count > Capacity)

@@ -9,9 +9,12 @@
 
 struct Test
 {
-	Test() = default;
+	Test() noexcept
+	{
+		//std::cout << "Default constructor called!\n";
+	}
 
-	Test(Test&&) 
+	Test(Test&&) noexcept
 	{
 		std::cout << "Move constructor called!\n";
 	}
@@ -33,7 +36,10 @@ struct Test
 		return *this;
 	}
 
-	~Test() = default;
+	~Test() noexcept
+	{
+		//std::cout << "Destructor called!\n";
+	}
 };
 
 int main()
