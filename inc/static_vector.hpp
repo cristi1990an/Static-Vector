@@ -586,7 +586,7 @@ public:
 		_size = count;
 	}
 
-	constexpr static_vector(std::size_t count) noexcept 
+	constexpr static_vector(std::size_t count)  
 		requires (std::is_default_constructible_v<T>)
 	{
 		if (count > Capacity)
@@ -615,7 +615,7 @@ public:
 	}
 
 	template <typename U> requires std::constructible_from<T, U>
-	constexpr static_vector(std::initializer_list<U> values) noexcept (std::is_nothrow_constructible_v<T, U>)
+	constexpr static_vector(std::initializer_list<U> values)
 	{
 		const auto count = values.size();
 
@@ -1211,3 +1211,15 @@ public:
 		return reinterpret_cast<const T*>(&_data[0]);
 	}
 };
+
+template <typename T, std::size_t lc, std::size_t rc> requires (std::equality_comparable<T>)
+constexpr bool operator==(const static_vector<T, lc>& lhs, const static_vector<T, rc> rhs) noexcept
+{
+	return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+}
+
+template <typename T, std::size_t lc, std::size_t rc> requires (std::equality_comparable<T>)
+constexpr auto operator<=>(const static_vector<T, lc>& lhs, const static_vector<T, rc> rhs) noexcept
+{
+	return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+}

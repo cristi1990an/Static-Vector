@@ -14,7 +14,7 @@ struct Test
 		//std::cout << "Default constructor called!\n";
 	}
 
-	Test(Test&&) 
+	Test(Test&&) noexcept
 	{
 		std::cout << "Move constructor called!\n";
 	}
@@ -44,6 +44,8 @@ struct Test
 
 int main()
 {
-	static_vector<Test, 10> v1(5);
-	static_vector<Test, 10> v2 = std::move(v1);
+	static_vector<int, 10> v1 = { 1,2,2,4,5 };
+	static_vector<int, 10> v2 = { 1,2,3,4,5 };
+
+	std::cout << (v1 <= v2);
 }
