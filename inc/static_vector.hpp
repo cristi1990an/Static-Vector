@@ -12,12 +12,23 @@
 #endif // _DEBUG
 
 template <typename T, size_t Capacity>
+class static_vector;
+
+template<typename T, std::size_t Capacity> requires (std::swappable<T>)
+constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>);
+
+template <typename T, size_t Capacity>
 class static_vector
 {
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
 	std::size_t _size = 0;
 
 public:
+
+	template<typename U, std::size_t Other_Size>
+	friend class static_vector;
+
+	friend constexpr void swap<>(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>);
 
 	struct iterator
 	{
@@ -967,6 +978,11 @@ public:
 		_size = count;
 	}
 
+	constexpr void swap(static_vector& other) noexcept(std::is_nothrow_swappable_v<T>) requires (std::swappable<T>)
+	{
+		::swap(*this, other);
+	}
+
 	constexpr reference operator[] (std::size_t index) noexcept(!STATIC_VECTOR_DEBUGGING)
 	{
 		if (STATIC_VECTOR_DEBUGGING)
@@ -1222,4 +1238,35 @@ template <typename T, std::size_t lc, std::size_t rc> requires (std::equality_co
 constexpr auto operator<=>(const static_vector<T, lc>& lhs, const static_vector<T, rc> rhs) noexcept
 {
 	return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+}
+
+template <typename T, std::size_t Capacity> requires (std::swappable<T>)
+constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>)
+{
+	auto left_it = lhs.begin();
+	auto right_it = rhs.begin();
+
+	for (; left_it != lhs.end() && right_it != rhs.end(); ++left_it, ++right_it)
+	{
+		std::swap(*left_it, *right_it);
+	}
+
+	if (left_it != lhs.end())
+	{
+		std::uninitialized_move(left_it, lhs.end(), rhs.end());
+		if constexpr (!std::is_trivially_destructible_v<T>)
+		{
+			std::destroy_n(left_it, std::distance(left_it, lhs.end() - 1));
+		}
+	}
+	while (right_it != rhs.end())
+	{
+		std::uninitialized_move(right_it, rhs.end(), lhs.end());
+		if constexpr (!std::is_trivially_destructible_v<T>)
+		{
+			std::destroy_n(right_it, std::distance(right_it, rhs.end() - 1));
+		}
+	}
+
+	std::swap(lhs._size, rhs._size);
 }

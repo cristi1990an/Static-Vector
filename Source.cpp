@@ -38,14 +38,14 @@ struct Test
 
 	~Test() noexcept
 	{
-		//std::cout << "Destructor called!\n";
+		std::cout << "Destructor called!\n";
 	}
 };
 
 int main()
 {
-	static_vector<int, 10> v1 = { 1,2,2,4,5 };
-	static_vector<int, 10> v2 = { 1,2,3,4,5 };
+	static_vector<Test, 10> v1(6);
+	static_vector<Test, 10> v2(3);
 
-	std::cout << (v1 <= v2);
+	v1.swap(v2);
 }
