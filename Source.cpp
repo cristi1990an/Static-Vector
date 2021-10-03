@@ -44,8 +44,20 @@ struct Test
 
 int main()
 {
-	static_vector<Test, 10> v1(6);
-	static_vector<Test, 10> v2(3);
+	static_vector<std::string, 10> vec_1 = { "Cristi", "e", "tare" };
+	static_vector<std::string, 10> vec_2 = { "Squid's", "game" };
 
-	v1.swap(v2);
+	vec_1.swap(vec_2);
+
+	for (const auto& word : vec_1)
+	{
+		std::cout << word << ' ';
+	}
+	std::cout << '\n';
+
+	for (const auto& word : vec_2)
+	{
+		std::cout << word << ' ';
+	}
+	std::cout << '\n';
 }

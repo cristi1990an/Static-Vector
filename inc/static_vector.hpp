@@ -14,7 +14,7 @@
 template <typename T, size_t Capacity>
 class static_vector;
 
-template<typename T, std::size_t Capacity> requires (std::swappable<T>)
+template<typename T, std::size_t Capacity> 
 constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>);
 
 template <typename T, size_t Capacity>
@@ -688,17 +688,8 @@ public:
 		other.clear();
 	}
 
-	template<std::size_t Other_Capacity> requires (std::move_constructible<T> || std::copy_constructible<T>)
-	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements)
+	constexpr static_vector(static_vector&& other) noexcept (nothrow_move_constructor_requirements) requires (std::move_constructible<T> || std::copy_constructible<T>)
 	{
-		if constexpr (Other_Capacity > Capacity)
-		{
-			if (other.size() > Capacity)
-			{
-				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
-			}
-		}
-
 		if constexpr ((std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) && std::is_move_constructible_v<T>)
 		{
 			std::uninitialized_move_n(other.begin(), other.size(), begin());
@@ -1083,7 +1074,7 @@ public:
 		}
 		else
 		{
-			if (std::is_nothrow_destructible_v<T>)
+			if constexpr (std::is_nothrow_destructible_v<T>)
 			{
 				std::destroy_n(begin(), size());
 				_size = 0;
@@ -1234,7 +1225,7 @@ constexpr auto operator<=>(const static_vector<T, lc>& lhs, const static_vector<
 	return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
 }
 
-template <typename T, std::size_t Capacity> requires (std::swappable<T>)
+template <typename T, std::size_t Capacity> 
 constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>)
 {
 	auto left_it = lhs.begin();
@@ -1253,7 +1244,7 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 			std::destroy_n(left_it, std::distance(left_it, lhs.end() - 1));
 		}
 	}
-	while (right_it != rhs.end())
+	if (right_it != rhs.end())
 	{
 		std::uninitialized_move(right_it, rhs.end(), lhs.end());
 		if constexpr (!std::is_trivially_destructible_v<T>)
@@ -1272,14 +1263,39 @@ namespace static_vector_static_assertions
 	{
 		NO_THROW_COPYABLE() noexcept = default;
 		NO_THROW_COPYABLE(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
-		NO_THROW_COPYABLE(NO_THROW_COPYABLE&&) {}
+		NO_THROW_COPYABLE(NO_THROW_COPYABLE&&) = delete;
 		NO_THROW_COPYABLE& operator=(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE& operator=(NO_THROW_COPYABLE&&) = delete;
 		~NO_THROW_COPYABLE() noexcept(IS_NO_THROW) {}
 	};
 
-	
+	template<bool IS_NO_THROW>
+	struct NO_THROW_MOVE
+	{
+		NO_THROW_MOVE() noexcept = default;
+		NO_THROW_MOVE(const NO_THROW_MOVE&) noexcept {}
+		NO_THROW_MOVE(NO_THROW_MOVE&&) noexcept(IS_NO_THROW) {}
+		NO_THROW_MOVE& operator=(const NO_THROW_MOVE&) noexcept {}
+		NO_THROW_MOVE& operator=(NO_THROW_MOVE&&) noexcept(IS_NO_THROW) {}
+		~NO_THROW_MOVE() noexcept(IS_NO_THROW) {}
+	};
 
+	struct NO_THROW_COPYABLE_WITH_NO_MOVE
+	{
+		NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept = default;
+		NO_THROW_COPYABLE_WITH_NO_MOVE(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept {}
+		NO_THROW_COPYABLE_WITH_NO_MOVE(NO_THROW_COPYABLE_WITH_NO_MOVE&&) = delete;
+		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept {}
+		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(NO_THROW_COPYABLE_WITH_NO_MOVE&&) = delete;
+		~NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept {}
+	};
+
+
+	static_assert(std::is_nothrow_move_assignable_v<static_vector<int, 10>>);
+	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_MOVE<false>, 10>>);
+	static_assert(std::is_nothrow_move_constructible_v<static_vector<NO_THROW_MOVE<true>, 10>>);
+	static_assert(!std::is_nothrow_copy_constructible_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
+	static_assert(std::is_nothrow_copy_constructible_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
 	static_assert(std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
 	static_assert(!std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
 	static_assert(std::is_trivially_destructible_v<static_vector<int, 10>>);
