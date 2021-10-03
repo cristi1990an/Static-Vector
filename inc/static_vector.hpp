@@ -28,7 +28,7 @@ public:
 	template<typename U, std::size_t Other_Size>
 	friend class static_vector;
 
-	friend constexpr void swap<>(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>);
+	friend constexpr void swap<>(static_vector& lhs, static_vector& rhs) noexcept (std::is_nothrow_swappable_v<T>);
 
 	struct iterator
 	{
@@ -500,7 +500,7 @@ public:
 
 		pointer ptr;
 	};
-
+	
 	using value_type = T;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
@@ -689,7 +689,7 @@ public:
 	}
 
 	template<std::size_t Other_Capacity> requires (std::move_constructible<T> || std::copy_constructible<T>)
-		constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements)
+	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements)
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -752,12 +752,6 @@ public:
 
 	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_destructible_v<T>) requires (std::copy_constructible<T>&& std::is_copy_assignable_v<T>)
 	{
-		if (other.size() > Capacity)
-		{
-			throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
-		}
-		
-
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
 			std::copy_n(other.cbegin(), other.size(), begin());
@@ -830,7 +824,7 @@ public:
 	}
 
 	template<std::size_t Other_Capacity> requires ((std::copy_constructible<T>&& std::is_copy_assignable_v<T>) || (std::move_constructible<T> && std::is_move_assignable_v<T>) && (Capacity != Other_Capacity))
-		constexpr static_vector& operator= (static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_assignment_requirements && (Other_Capacity < Capacity))
+	constexpr static_vector& operator= (static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_assignment_requirements && (Other_Capacity < Capacity))
 	{
 		// If T isn't both move_constructible_and_move_assignable or if they aren't nothrow, we'll just do a copy
 		if constexpr (!both_move_constructible_and_move_assignable || !is_both_nothrow_move_constructible_and_move_assignable)
@@ -1269,4 +1263,25 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 	}
 
 	std::swap(lhs._size, rhs._size);
+}
+
+namespace static_vector_static_assertions
+{
+	template<bool IS_NO_THROW>
+	struct NO_THROW_COPYABLE
+	{
+		NO_THROW_COPYABLE() noexcept = default;
+		NO_THROW_COPYABLE(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
+		NO_THROW_COPYABLE(NO_THROW_COPYABLE&&) {}
+		NO_THROW_COPYABLE& operator=(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
+		NO_THROW_COPYABLE& operator=(NO_THROW_COPYABLE&&) = delete;
+		~NO_THROW_COPYABLE() noexcept(IS_NO_THROW) {}
+	};
+
+	
+
+	static_assert(std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
+	static_assert(!std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
+	static_assert(std::is_trivially_destructible_v<static_vector<int, 10>>);
+	static_assert(!std::is_trivially_destructible_v<static_vector<std::string, 10>>);
 }
