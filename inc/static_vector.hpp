@@ -961,9 +961,69 @@ public:
 		_size = count;
 	}
 
-	constexpr void swap(static_vector& other) noexcept(std::is_nothrow_swappable_v<T>) requires (std::swappable<T>)
+	constexpr void swap(static_vector& other) noexcept(std::is_nothrow_swappable_v<T>) requires (std::is_swappable_v<T>)
 	{
 		::swap(*this, other);
+	}
+
+	template <size_t Other_Capacity> requires (Capacity != Other_Capacity && std::is_swappable_v<T>)
+	constexpr void swap(static_vector<T, Other_Capacity>& other)
+	{
+		if constexpr (Other_Capacity > Capacity)
+		{
+			if (other.size() > Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			}
+		}
+		else
+		{
+			if (size() > Other_Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			}
+		}
+
+		auto this_it = begin();
+		auto other_it = other.begin();
+
+		for (; this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+		{
+			std::swap(*this_it, *other_it);
+		}
+
+		if (this_it != end())
+		{
+			if constexpr (std::is_move_constructible_v<T>)
+			{
+				std::uninitialized_move(this_it, end(), other.end());
+			}
+			else
+			{
+				std::uninitialized_copy(this_it, end(), other.end());
+			}
+			if constexpr (!std::is_trivially_destructible_v<T>)
+			{
+				std::destroy_n(this_it, std::distance(this_it, end() - 1));
+			}
+		}
+		if (other_it != other.end())
+		{
+			if constexpr (std::is_move_constructible_v<T>)
+			{
+				std::uninitialized_move(other_it, other.end(), end());
+			}
+			else
+			{
+				std::uninitialized_copy(other_it, other.end(), end());
+			}
+			if constexpr (!std::is_trivially_destructible_v<T>)
+			{
+				std::destroy_n(other_it, std::distance(other_it, other.end() - 1));
+			}
+		}
+
+		std::swap(_size, other._size);
 	}
 
 	constexpr reference operator[] (std::size_t index) noexcept(!STATIC_VECTOR_DEBUGGING)
@@ -1223,9 +1283,20 @@ constexpr auto operator<=>(const static_vector<T, lc>& lhs, const static_vector<
 	return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
 }
 
+template <typename T, std::size_t LCapacity, std::size_t RCapacity> requires (LCapacity != RCapacity)
+constexpr void swap(static_vector<T, LCapacity>& lhs, static_vector<T, RCapacity>& rhs)
+{
+	lhs.swap(rhs);
+}
+
 template <typename T, std::size_t Capacity>
 constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && std::is_nothrow_destructible_v<T>)
 {
+	if (&lhs == &rhs)
+	{
+		return;
+	}
+
 	auto left_it = lhs.begin();
 	auto right_it = rhs.begin();
 
