@@ -640,6 +640,12 @@ public:
 		_size = count;
 	}
 
+	constexpr static_vector(const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>) requires (std::is_copy_constructible_v<T>)
+		: _size(other.size())
+	{
+		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
+	}
+
 	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && (Capacity != Other_Capacity))
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity < Capacity))
 	{
@@ -656,11 +662,7 @@ public:
 		_size = other.size();
 	}
 
-	constexpr static_vector(const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>) requires std::copy_constructible<T>
-		: _size (other.size())
-	{
-		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
-	}
+	
 
 	template<std::size_t Other_Capacity> requires ((std::move_constructible<T> || std::copy_constructible<T>) && (Capacity != Other_Capacity))
 	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements && Capacity > Other_Capacity)
@@ -703,17 +705,8 @@ public:
 		other.clear();
 	}
 
-	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T> && (Capacity != Other_Capacity))
-	constexpr static_vector& operator= (const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity < Capacity))
+	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_destructible_v<T>) requires (std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>)
 	{
-		if constexpr (Other_Capacity > Capacity)
-		{
-			if (other.size() > Capacity)
-			{
-				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
-			}
-		}
-
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
 			std::copy_n(other.cbegin(), other.size(), begin());
@@ -740,8 +733,17 @@ public:
 		return *this;
 	}
 
-	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T>) requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
+	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T> && (Capacity != Other_Capacity))
+	constexpr static_vector& operator= (const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity < Capacity))
 	{
+		if constexpr (Other_Capacity > Capacity)
+		{
+			if (other.size() > Capacity)
+			{
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+			}
+		}
+
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
 			std::copy_n(other.cbegin(), other.size(), begin());
