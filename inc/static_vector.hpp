@@ -703,8 +703,8 @@ public:
 		other.clear();
 	}
 
-	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T> && Capacity != Other_Capacity)
-	constexpr static_vector& operator= (const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity < Capacity))
+	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && std::is_copy_assignable_v<T> && (Capacity != Other_Capacity))
+	constexpr static_vector& operator= (const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T> && (Other_Capacity < Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -740,7 +740,7 @@ public:
 		return *this;
 	}
 
-	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_destructible_v<T>) requires (std::copy_constructible<T>&& std::is_copy_assignable_v<T>)
+	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_destructible_v<T>) requires (std::copy_constructible<T> && std::is_copy_assignable_v<T>)
 	{
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
@@ -1293,8 +1293,8 @@ namespace static_vector_static_assertions
 	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_MOVE<false>, 10>>);
 	static_assert(std::is_nothrow_move_constructible_v<static_vector<NO_THROW_MOVE<true>, 10>>);
 	static_assert(!std::is_nothrow_copy_constructible_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
-	//static_assert(std::is_nothrow_copy_constructible_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
-	//static_assert(std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
+	static_assert(std::is_nothrow_copy_constructible_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
+	static_assert(std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
 	static_assert(!std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
 	static_assert(std::is_trivially_destructible_v<static_vector<int, 10>>);
 	static_assert(!std::is_trivially_destructible_v<static_vector<std::string, 10>>);
