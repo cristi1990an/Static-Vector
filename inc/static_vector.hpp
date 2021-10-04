@@ -15,7 +15,7 @@ template <typename T, size_t Capacity>
 class static_vector;
 
 template<typename T, std::size_t Capacity> 
-constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>);
+constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && std::is_nothrow_destructible_v<T>);
 
 template <typename T, size_t Capacity>
 class static_vector
@@ -28,7 +28,7 @@ public:
 	template<typename U, std::size_t Other_Size>
 	friend class static_vector;
 
-	friend constexpr void swap<>(static_vector& lhs, static_vector& rhs) noexcept (std::is_nothrow_swappable_v<T>);
+	friend constexpr void swap<>(static_vector& lhs, static_vector& rhs) noexcept (std::is_nothrow_swappable_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && std::is_nothrow_destructible_v<T>);
 
 	struct iterator
 	{
@@ -611,7 +611,7 @@ public:
 	}
 
 	template<typename Iterator> requires std::constructible_from<T, typename Iterator::value_type>
-	constexpr static_vector(Iterator first, Iterator last) noexcept (std::is_nothrow_copy_constructible_v<T>)
+	constexpr static_vector(Iterator first, Iterator last) 
 	{
 		const auto count = std::distance(first, last);
 
@@ -661,8 +661,6 @@ public:
 
 		_size = other.size();
 	}
-
-	
 
 	template<std::size_t Other_Capacity> requires ((std::move_constructible<T> || std::copy_constructible<T>) && (Capacity != Other_Capacity))
 	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements && Capacity > Other_Capacity)
@@ -898,7 +896,7 @@ public:
 		return *this;
 	}
 
-	template <typename U> requires (std::constructible_from<T, U>&& std::is_copy_assignable_v<T>&& std::copy_constructible<T>)
+	template <typename U> requires (std::is_constructible_v<T, U> && std::is_copy_assignable_v<T>&& std::is_copy_constructible_v<T>)
 	constexpr void assign(std::initializer_list<U> values)
 	{
 		const auto count = values.size();
@@ -1225,8 +1223,8 @@ constexpr auto operator<=>(const static_vector<T, lc>& lhs, const static_vector<
 	return std::lexicographical_compare_three_way(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
 }
 
-template <typename T, std::size_t Capacity> 
-constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T>)
+template <typename T, std::size_t Capacity>
+constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>& rhs) noexcept (std::is_nothrow_swappable_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && std::is_nothrow_destructible_v<T>)
 {
 	auto left_it = lhs.begin();
 	auto right_it = rhs.begin();
@@ -1238,7 +1236,14 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 
 	if (left_it != lhs.end())
 	{
-		std::uninitialized_move(left_it, lhs.end(), rhs.end());
+		if constexpr (std::is_move_constructible_v<T>)
+		{
+			std::uninitialized_move(left_it, lhs.end(), rhs.end());
+		}
+		else
+		{
+			std::uninitialized_copy(left_it, lhs.end(), rhs.end());
+		}
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
 			std::destroy_n(left_it, std::distance(left_it, lhs.end() - 1));
@@ -1246,7 +1251,14 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 	}
 	if (right_it != rhs.end())
 	{
-		std::uninitialized_move(right_it, rhs.end(), lhs.end());
+		if constexpr (std::is_move_constructible_v<T>)
+		{
+			std::uninitialized_move(right_it, rhs.end(), lhs.end());
+		}
+		else
+		{
+			std::uninitialized_copy(right_it, rhs.end(), lhs.end());
+		}
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
 			std::destroy_n(right_it, std::distance(right_it, rhs.end() - 1));
@@ -1280,16 +1292,21 @@ namespace static_vector_static_assertions
 		~NO_THROW_MOVE() noexcept(IS_NO_THROW) {}
 	};
 
+	template<bool IS_NO_THROW>
 	struct NO_THROW_COPYABLE_WITH_NO_MOVE
 	{
-		NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept = default;
-		NO_THROW_COPYABLE_WITH_NO_MOVE(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept {}
+		NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) = default;
+		NO_THROW_COPYABLE_WITH_NO_MOVE(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE_WITH_NO_MOVE(NO_THROW_COPYABLE_WITH_NO_MOVE&&) = delete;
-		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept {}
+		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(NO_THROW_COPYABLE_WITH_NO_MOVE&&) = delete;
-		~NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept {}
+		~NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) {}
 	};
 
+	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);
+	static_assert(std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<true>, 10>>);
+	static_assert(!std::is_nothrow_move_assignable_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);
+	static_assert(std::is_nothrow_move_assignable_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<true>, 10>>);
 	static_assert(!std::is_nothrow_move_assignable_v<static_vector<NO_THROW_MOVE<false>, 10>>);
 	static_assert(std::is_nothrow_move_assignable_v<static_vector<NO_THROW_MOVE<true>, 10>>);
 	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_MOVE<false>, 10>>);
@@ -1300,4 +1317,8 @@ namespace static_vector_static_assertions
 	static_assert(!std::is_nothrow_copy_assignable_v<static_vector<NO_THROW_COPYABLE<false>, 10>>);
 	static_assert(std::is_trivially_destructible_v<static_vector<int, 10>>);
 	static_assert(!std::is_trivially_destructible_v<static_vector<std::string, 10>>);
+	static_assert(std::is_nothrow_constructible_v<static_vector<int, 10>>);
+	static_assert(!std::is_nothrow_constructible_v<static_vector<int, 10>, size_t>);
+	static_assert(!std::is_nothrow_constructible_v<static_vector<int, 10>, size_t, int>);
+	static_assert(!std::is_nothrow_constructible_v<static_vector<int, 10>, std::initializer_list<int>>);
 }
