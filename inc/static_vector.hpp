@@ -30,6 +30,7 @@ public:
 
 	friend constexpr void swap<>(static_vector& lhs, static_vector& rhs) noexcept (std::is_nothrow_swappable_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && std::is_nothrow_destructible_v<T>);
 
+	struct const_iterator;
 	struct iterator
 	{
 		using difference_type = ptrdiff_t;
@@ -38,6 +39,8 @@ public:
 		using pointer = T*;
 		using reference = T&;
 		using iterator_category = std::contiguous_iterator_tag;
+
+		friend struct const_iterator;
 
 		constexpr iterator() noexcept : ptr{} {};
 		constexpr iterator(const iterator&) noexcept = default;
@@ -147,6 +150,8 @@ public:
 		using pointer = const T*;
 		using reference = const T&;
 		using iterator_category = std::contiguous_iterator_tag;
+
+		friend struct iterator;
 
 		constexpr const_iterator() noexcept : ptr{} {};
 		constexpr const_iterator(const const_iterator&) noexcept = default;
@@ -265,6 +270,8 @@ public:
 
 		pointer ptr;
 	};
+
+	struct const_reverse_iterator;
 	struct reverse_iterator
 	{
 		using difference_type = ptrdiff_t;
@@ -273,6 +280,8 @@ public:
 		using pointer = T*;
 		using reference = T&;
 		using iterator_category = std::contiguous_iterator_tag;
+
+		friend struct const_reverse_iterator;
 
 		constexpr reverse_iterator() noexcept : ptr{} {};
 		constexpr reverse_iterator(const reverse_iterator&) noexcept = default;
@@ -382,6 +391,8 @@ public:
 		using pointer = const T*;
 		using reference = const T&;
 		using iterator_category = std::contiguous_iterator_tag;
+
+		friend struct reverse_iterator;
 
 		constexpr const_reverse_iterator() noexcept : ptr{} {};
 		constexpr const_reverse_iterator(const const_reverse_iterator&) noexcept = default;
@@ -1169,6 +1180,19 @@ public:
 	{
 		auto mutable_pos = *reinterpret_cast<iterator*>(&pos);
 		return this->insert(mutable_pos, value);
+	}
+
+	constexpr iterator erase(const_iterator pos) noexcept(std::is_nothrow_move_assignable_v<T>&& std::is_nothrow_destructible_v<T>)
+	{
+		for (iterator it = *reinterpret_cast<iterator*>(std::addressof(pos)); it != (end() - 1); ++it)
+		{
+			*it = std::move(*(it + 1));
+		}
+		std::destroy_at(std::to_address(end() - 1));
+
+		_size--;
+
+		return *reinterpret_cast<iterator*>(std::addressof(pos));
 	}
 
 	// If T is trivially_destructible, static_vector<T> should be too.

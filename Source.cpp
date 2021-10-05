@@ -9,18 +9,26 @@
 
 int main()
 {
-	static_vector<std::string, 10> v_1 = { "Cristi", "stie", "sa", "programeze" };
-	static_vector<std::string, 5> v_2 = { "Ceva", "stupid" };
+	static_vector<std::string, 10> vec =
+	{ "Cristi", "nu", "stie", "sa", "programeze" };
 
-	v_1.swap(v_2);
-
-	for (const auto& word : v_1)
+	for (const auto& word : vec)
 	{
 		std::cout << word << ' ';
 	}
 	std::cout << '\n';
 
-	for (const auto& word : v_2)
+	vec.erase(vec.begin() + 1);
+
+	for (const auto& word : vec)
+	{
+		std::cout << word << ' ';
+	}
+	std::cout << '\n';
+
+	vec.erase(vec.begin() + 3);
+
+	for (const auto& word : vec)
 	{
 		std::cout << word << ' ';
 	}
