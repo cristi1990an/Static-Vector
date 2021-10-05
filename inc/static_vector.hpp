@@ -972,6 +972,46 @@ public:
 		_size = count;
 	}
 
+	template <typename InputIt>// requires (std::is_constructible_from_v<T, typename InputIt::value_type)
+	constexpr void assign(InputIt first, InputIt last)
+	{
+		const auto new_size = static_cast<size_t>(std::distance(first, last));
+
+		if (new_size > Capacity)
+		{
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+		}
+
+		if (new_size < _size)
+		{
+			std::copy_n(first, new_size, begin());
+
+			if constexpr (!std::is_trivially_destructible_v<T>)
+			{
+				std::destroy_n(begin() + new_size, _size - new_size);
+			}
+
+			_size = new_size;
+		}
+		else if (new_size == _size)
+		{
+			std::copy_n(first, new_size, begin());
+			_size = new_size;
+		}
+		else
+		{
+			auto it = begin();
+			for (size_t i = 0; i < _size; i++)
+			{
+				*it = *first;
+				++it;
+				++first;
+			}
+			std::uninitialized_copy(first, last, it);
+			_size = new_size;
+		}
+	}
+
 	constexpr void swap(static_vector& other) noexcept(std::is_nothrow_swappable_v<T>) requires (std::is_swappable_v<T>)
 	{
 		::swap(*this, other);

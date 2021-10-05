@@ -12,15 +12,18 @@ int main()
 	static_vector<std::string, 10> vec =
 	{ "Cristi", "nu", "stie", "sa", "programeze" };
 
-	auto it = vec.erase(vec.begin() + 1, vec.begin() + 2);
+	static_vector<std::string, 10> vec_2 =
+	{ "Ceva", "mesaj", "care", "trebuie", "sa", "fie", "sters" };
 
-	for (const auto& word : vec)
+	std::cout << vec_2.size() << '\n';
+
+	vec_2.assign(vec.begin(), vec.end());
+
+	for (const auto& word : vec_2)
 	{
 		std::cout << word << ' ';
 	}
+
 	std::cout << '\n';
-
-	std::cout << vec.size() << '\n';
-
-	std::cout << *it;
+	std::cout << vec_2.size();
 }
