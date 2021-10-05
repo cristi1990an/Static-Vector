@@ -12,13 +12,7 @@ int main()
 	static_vector<std::string, 10> vec =
 	{ "Cristi", "nu", "stie", "sa", "programeze" };
 
-	for (const auto& word : vec)
-	{
-		std::cout << word << ' ';
-	}
-	std::cout << '\n';
-
-	vec.erase(vec.begin() + 1);
+	auto it = vec.erase(vec.begin() + 1, vec.begin() + 2);
 
 	for (const auto& word : vec)
 	{
@@ -26,11 +20,7 @@ int main()
 	}
 	std::cout << '\n';
 
-	vec.erase(vec.begin() + 3);
+	std::cout << vec.size() << '\n';
 
-	for (const auto& word : vec)
-	{
-		std::cout << word << ' ';
-	}
-	std::cout << '\n';
+	std::cout << *it;
 }

@@ -1195,6 +1195,29 @@ public:
 		return *reinterpret_cast<iterator*>(std::addressof(pos));
 	}
 
+	constexpr iterator erase(const_iterator from, const_iterator to) noexcept(std::is_nothrow_move_assignable_v<T>&& std::is_nothrow_destructible_v<T>)
+	{
+		iterator it_1 = *reinterpret_cast<iterator*>(std::addressof(from));
+		auto to_2 = to + 1;
+		iterator it_2 = *reinterpret_cast<iterator*>(std::addressof(to_2));
+
+		while (it_2 != end())
+		{
+			*it_1 = std::move(*it_2);
+			++it_1;
+			++it_2;
+		}
+
+		if (it_1 < to)
+		{
+			std::destroy(it_1, *reinterpret_cast<iterator*>(std::addressof(to_2)));
+		}
+
+		_size = std::distance(begin(), it_1);
+
+		return *reinterpret_cast<iterator*>(std::addressof(from));
+	}
+
 	// If T is trivially_destructible, static_vector<T> should be too.
 	// To get trivial destructibility, a class needs to default ~static_vector
 	// Use a requires clause to select the right version (default vs destroy_n)
