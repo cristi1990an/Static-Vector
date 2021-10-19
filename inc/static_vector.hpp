@@ -1147,14 +1147,11 @@ public:
 		_size++;
 	}
 
-	constexpr void pop_back() noexcept(!STATIC_VECTOR_DEBUGGING && std::is_nothrow_destructible_v<T>)
+	constexpr void pop_back() 
 	{
-		if (STATIC_VECTOR_DEBUGGING)
+		if (empty())
 		{
-			if (empty())
-			{
-				throw std::runtime_error("Can't pop from empty vector!\n");
-			}
+			throw std::runtime_error("Can't pop from empty vector!\n");
 		}
 
 		if constexpr (!std::is_trivially_destructible_v<T>)
