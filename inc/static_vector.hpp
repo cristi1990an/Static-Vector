@@ -1081,7 +1081,7 @@ public:
 
 	constexpr reference operator[] (std::size_t index) noexcept(!STATIC_VECTOR_DEBUGGING)
 	{
-		if (STATIC_VECTOR_DEBUGGING)
+		if constexpr (STATIC_VECTOR_DEBUGGING)
 		{
 			if (index > _size - 1)
 			{
@@ -1094,7 +1094,7 @@ public:
 
 	constexpr const_reference operator[] (std::size_t index) const noexcept(!STATIC_VECTOR_DEBUGGING)
 	{
-		if (STATIC_VECTOR_DEBUGGING)
+		if constexpr (STATIC_VECTOR_DEBUGGING)
 		{
 			if (index > _size - 1)
 			{
