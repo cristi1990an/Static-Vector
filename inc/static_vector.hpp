@@ -651,13 +651,15 @@ public:
 		_size = count;
 	}
 
-	constexpr static_vector(const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>) requires (std::is_copy_constructible_v<T>)
+	constexpr static_vector(const static_vector& other) noexcept requires (std::is_copy_constructible_v<T> && std::is_trivially_copy_constructible_v<T>) = default;
+
+	constexpr static_vector(const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>) requires (!std::is_trivially_copy_constructible_v<T> && std::is_copy_constructible_v<T>)
 		: _size(other.size())
 	{
 		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
 	}
 
-	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && (Capacity != Other_Capacity))
+	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && !std::is_trivially_copy_constructible_v<T> && (Capacity != Other_Capacity))
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity < Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
@@ -673,8 +675,26 @@ public:
 		_size = other.size();
 	}
 
-	template<std::size_t Other_Capacity> requires ((std::move_constructible<T> || std::copy_constructible<T>) && (Capacity != Other_Capacity))
-	constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements && Capacity > Other_Capacity)
+	constexpr static_vector(static_vector&& other) noexcept requires (std::is_trivially_move_constructible_v<T> && std::is_move_constructible_v<T>) = default;
+
+	constexpr static_vector(static_vector&& other) noexcept (nothrow_move_constructor_requirements) requires (!std::is_trivially_move_constructible_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>))
+	{
+		if constexpr ((std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) && std::is_move_constructible_v<T>)
+		{
+			std::uninitialized_move_n(other.begin(), other.size(), begin());
+		}
+		else
+		{
+			std::uninitialized_copy_n(other.begin(), other.size(), begin());
+		}
+
+		_size = other.size();
+
+		other.clear();
+	}
+
+	template<std::size_t Other_Capacity> requires ((std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && (Capacity != Other_Capacity))
+		constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements&& Capacity > Other_Capacity)
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
@@ -698,23 +718,10 @@ public:
 		other.clear();
 	}
 
-	constexpr static_vector(static_vector&& other) noexcept (nothrow_move_constructor_requirements) requires (std::move_constructible<T> || std::copy_constructible<T>)
-	{
-		if constexpr ((std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) && std::is_move_constructible_v<T>)
-		{
-			std::uninitialized_move_n(other.begin(), other.size(), begin());
-		}
-		else
-		{
-			std::uninitialized_copy_n(other.begin(), other.size(), begin());
-		}
+	constexpr static_vector& operator=(const static_vector& other) noexcept requires (std::is_trivially_copyable_v<T> && std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>) = default;
 
-		_size = other.size();
-
-		other.clear();
-	}
-
-	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_destructible_v<T>) requires (std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>)
+	constexpr static_vector& operator= (const static_vector& other) noexcept (std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_destructible_v<T>) 
+		requires (!std::is_trivially_copyable_v<T> && std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>)
 	{
 		if constexpr (std::is_trivially_copyable_v<T>)
 		{
@@ -779,40 +786,35 @@ public:
 		return *this;
 	}
  
-	constexpr static_vector& operator= (static_vector&& other) noexcept (nothrow_move_assignment_requirements) requires ((std::copy_constructible<T>&& std::is_copy_assignable_v<T>) || (std::move_constructible<T> && std::is_move_assignable_v<T>))
+	constexpr static_vector& operator=(static_vector&& other) noexcept requires (std::is_trivially_move_assignable_v<T> && std::is_move_assignable_v<T> && std::is_trivially_move_assignable_v<T>) = default;
+
+	constexpr static_vector& operator=(static_vector&& other) noexcept (nothrow_move_assignment_requirements) requires (!std::is_trivially_move_assignable_v<T> && ((std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>) || (std::is_move_constructible_v<T> && std::is_move_assignable_v<T>)))
 	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
 		// If T isn't both move_constructible_and_move_assignable or if they aren't nothrow, we'll just do a copy
 		if constexpr (!both_move_constructible_and_move_assignable || !is_both_nothrow_move_constructible_and_move_assignable)
 		{
-			(*this) = other; // This line does nothing?
+			(*this) = other;
 			other.clear();
 			return *this;
 		}
 		else
 		{
-			if (this == &other)
+			if (_size <= other.size())
 			{
-				return *this;
-			}
-
-			if constexpr (std::is_trivially_move_assignable_v<T>)
-			{
-				std::copy_n(std::make_move_iterator(other.begin()), other.size(), begin());
+				std::copy_n(std::make_move_iterator(other.begin()), _size, begin());
+				std::uninitialized_move_n(other.begin() + _size, other.size() - _size, begin() + _size);
 			}
 			else
 			{
-				if (_size <= other.size())
+				std::copy_n(std::make_move_iterator(other.begin()), other.size(), begin());
+				if constexpr (!std::is_trivially_destructible_v<T>)
 				{
-					std::copy_n(std::make_move_iterator(other.begin()), _size, begin());
-					std::uninitialized_move_n(other.begin() + _size, other.size() - _size, begin() + _size);
-				}
-				else
-				{
-					std::copy_n(std::make_move_iterator(other.begin()), other.size(), begin());
-					if constexpr (!std::is_trivially_destructible_v<T>)
-					{
-						std::destroy_n(begin() + other.size(), _size - other.size());
-					}
+					std::destroy_n(begin() + other.size(), _size - other.size());
 				}
 			}
 
@@ -1269,7 +1271,7 @@ public:
 	//    https://youtu.be/sQcPte0JNmE?t=1147
 	//
 	// Unfortunately, this won't work on clang yet
-	constexpr ~static_vector() = default;
+	constexpr ~static_vector() noexcept requires (std::is_trivially_destructible_v<T>) = default;
 	constexpr ~static_vector() noexcept (std::is_nothrow_destructible_v<T>)
 		requires(!std::is_trivially_destructible_v<T>)
 	{
@@ -1431,7 +1433,7 @@ namespace static_vector_static_assertions
 	template<bool IS_NO_THROW>
 	struct NO_THROW_COPYABLE
 	{
-		NO_THROW_COPYABLE() noexcept = default;
+		NO_THROW_COPYABLE() noexcept {}
 		NO_THROW_COPYABLE(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE(NO_THROW_COPYABLE&&) = delete;
 		NO_THROW_COPYABLE& operator=(const NO_THROW_COPYABLE&) noexcept(IS_NO_THROW) {}
@@ -1442,7 +1444,7 @@ namespace static_vector_static_assertions
 	template<bool IS_NO_THROW>
 	struct NO_THROW_MOVE
 	{
-		NO_THROW_MOVE() noexcept = default;
+		NO_THROW_MOVE() noexcept {}
 		NO_THROW_MOVE(const NO_THROW_MOVE&) noexcept {}
 		NO_THROW_MOVE(NO_THROW_MOVE&&) noexcept(IS_NO_THROW) {}
 		NO_THROW_MOVE& operator=(const NO_THROW_MOVE&) noexcept {}
@@ -1453,7 +1455,7 @@ namespace static_vector_static_assertions
 	template<bool IS_NO_THROW>
 	struct NO_THROW_COPYABLE_WITH_NO_MOVE
 	{
-		NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) = default;
+		NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE_WITH_NO_MOVE(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept(IS_NO_THROW) {}
 		NO_THROW_COPYABLE_WITH_NO_MOVE(NO_THROW_COPYABLE_WITH_NO_MOVE&&) = delete;
 		NO_THROW_COPYABLE_WITH_NO_MOVE& operator=(const NO_THROW_COPYABLE_WITH_NO_MOVE&) noexcept(IS_NO_THROW) {}
@@ -1461,6 +1463,14 @@ namespace static_vector_static_assertions
 		~NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) {}
 	};
 
+	static_assert(!std::is_trivially_move_constructible_v<static_vector<std::string, 10>>);
+	static_assert(std::is_trivially_move_constructible_v<static_vector<int, 10>>);
+	static_assert(!std::is_trivially_copy_constructible_v<static_vector<std::string, 10>>);
+	static_assert(std::is_trivially_copy_constructible_v<static_vector<int, 10>>);
+	static_assert(!std::is_trivially_move_assignable_v<static_vector<std::string, 10>>);
+	static_assert(std::is_trivially_move_assignable_v<static_vector<int, 10>>);
+	static_assert(!std::is_trivially_copy_assignable_v<static_vector<std::string, 10>>);
+	static_assert(std::is_trivially_copy_assignable_v<static_vector<int, 10>>);
 	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);
 	static_assert(std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<true>, 10>>);
 	static_assert(!std::is_nothrow_move_assignable_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);

@@ -1,16 +1,17 @@
 #include <string>
 #include <set>
 #include <map>
+#include <list>
 #include <any>
 #include <variant>
 #include <optional>
 #include <iostream>
 #include "inc/static_vector.hpp"
-
 int main()
 {
-	static_vector<std::string, 10> vec =
-	{ "Cristi", "nu", "stie", "sa", "programeze" };
+
+	std::list<std::string> vec =
+	{ "Cristi", "nu", "stie", "sa", "programeze", "foarte", "bine", "asta", "este", "stiut"};
 
 	static_vector<std::string, 10> vec_2 =
 	{ "Ceva", "mesaj", "care", "trebuie", "sa", "fie", "sters" };
