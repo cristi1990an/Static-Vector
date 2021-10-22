@@ -522,51 +522,69 @@ public:
 
 	constexpr iterator begin() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[0])));
+		return iterator(std::launder(reinterpret_cast<T*>(std::addressof(_data))));
 	}
 	constexpr iterator end() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size])));
+		const auto* data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
+		const auto* end_ptr = std::addressof(data_as_T_ptr[_size]);
+		return iterator(std::launder(end_ptr));
 	}
 	constexpr const_iterator begin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(std::addressof(_data))));
 	}
 	constexpr const_iterator end() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size]);
+		return const_iterator(std::launder(end_ptr));
 	}
 	constexpr const_iterator cbegin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(std::addressof(_data))));
 	}
 	constexpr const_iterator cend() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size]);
+		return const_iterator(std::launder(end_ptr));
 	}
 	constexpr reverse_iterator rbegin() noexcept
 	{
-		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+		const auto* const data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
+		return reverse_iterator(std::launder(end_ptr));
 	}
 	constexpr reverse_iterator rend() noexcept
 	{
-		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
+		const auto* const data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
+		return reverse_iterator(std::launder(end_ptr));
 	}
 	constexpr const_reverse_iterator rbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
+		return const_reverse_iterator(std::launder(end_ptr));
 	}
 	constexpr const_reverse_iterator rend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
+		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
+		return const_reverse_iterator(std::launder(end_ptr));
 	}
 	constexpr const_reverse_iterator crbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		const auto* data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
+		return const_reverse_iterator(std::launder(end_ptr));
 	}
 	constexpr const_reverse_iterator crend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
+		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
+		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
+		return const_reverse_iterator(std::launder(end_ptr));
 	}
 
 	static constexpr bool nothrow_move_constructor_requirements = (
@@ -600,7 +618,7 @@ public:
 	{
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_fill_n(begin(), count, value);
@@ -613,7 +631,7 @@ public:
 	{
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_default_construct_n(begin(), count);
@@ -628,7 +646,7 @@ public:
 
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_copy(first, last, begin());
@@ -643,7 +661,7 @@ public:
 
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_copy_n(values.begin(), count, begin());
@@ -666,7 +684,7 @@ public:
 		{
 			if (other.size() > Capacity)
 			{
-				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 			}
 		}
 
@@ -700,7 +718,7 @@ public:
 		{
 			if (other.size() > Capacity)
 			{
-				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 			}
 		}
 
@@ -756,7 +774,7 @@ public:
 		{
 			if (other.size() > Capacity)
 			{
-				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 			}
 		}
 
@@ -841,7 +859,7 @@ public:
 			{
 				if (other.size() > Capacity)
 				{
-					throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!\n");
+					throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 				}
 			}
 
@@ -880,7 +898,7 @@ public:
 
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		if constexpr (std::is_trivially_copyable_v<T>)
@@ -916,7 +934,7 @@ public:
 
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		if constexpr (std::is_trivially_copyable_v<T>)
@@ -947,7 +965,7 @@ public:
 	{
 		if (count > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		if constexpr (std::is_trivially_copyable_v<T>)
@@ -981,7 +999,7 @@ public:
 
 		if (new_size > Capacity)
 		{
-			throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		if (new_size < _size)
@@ -1026,14 +1044,14 @@ public:
 		{
 			if (other.size() > Capacity)
 			{
-				throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+				throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 			}
 		}
 		else
 		{
 			if (size() > Other_Capacity)
 			{
-				throw std::runtime_error("Static vector lacks the capacity for so many elements!\n");
+				throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 			}
 		}
 
@@ -1085,11 +1103,11 @@ public:
 		{
 			if (index > _size - 1)
 			{
-				throw std::out_of_range("Index out of bounds!\n");
+				throw std::out_of_range("Index out of bounds!");
 			}
 		}
 
-		return *reinterpret_cast<T*>(&_data[index]);
+		return (reinterpret_cast<T*>(std::addressof(_data)))[index];
 	}
 
 	constexpr const_reference operator[] (std::size_t index) const noexcept(!STATIC_VECTOR_DEBUGGING)
@@ -1098,38 +1116,38 @@ public:
 		{
 			if (index > _size - 1)
 			{
-				throw std::out_of_range("Index out of bounds!\n");
+				throw std::out_of_range("Index out of bounds!");
 			}
 		}
 
-		return *reinterpret_cast<const T*>(&_data[index]);
+		return (reinterpret_cast<const T*>(std::addressof(_data)))[index];
 	}
 
 	constexpr reference at(std::size_t index) 
 	{
 		if (index > _size - 1)
 		{
-			throw std::out_of_range("Index out of bounds!\n");
+			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return *reinterpret_cast<T*>(&_data[index]);
+		return (reinterpret_cast<T*>(std::addressof(_data)))[index];
 	}
 
 	constexpr const_reference at(std::size_t index) const 
 	{
 		if (index > _size - 1)
 		{
-			throw std::out_of_range("Index out of bounds!\n");
+			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return *reinterpret_cast<const T*>(&_data[index]);
+		return (reinterpret_cast<const T*>(std::addressof(_data)))[index];
 	}
 
 	constexpr void push_back(const T& val)
 	{
 		if (_size == Capacity)
 		{
-			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!");
 		}
 
 		std::construct_at(std::to_address(end()), val);
@@ -1140,7 +1158,7 @@ public:
 	{
 		if (_size == Capacity)
 		{
-			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!");
 		}
 
 		std::construct_at(std::to_address(end()), std::forward<T>(val));
@@ -1151,12 +1169,13 @@ public:
 	{
 		if (empty())
 		{
-			throw std::runtime_error("Can't pop from empty vector!\n");
+			throw std::runtime_error("Can't pop from empty vector!");
 		}
 
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
-			std::destroy_at(reinterpret_cast<T*>(&_data[_size - 1]));
+			const auto* data_as_T_array = reinterpret_cast<T*>(std::addressof(_data));
+			std::destroy_at(std::addressof(data_as_T_array[_size - 1]));
 		}
 
 		_size--;
@@ -1167,7 +1186,7 @@ public:
 	{
 		if (_size == Capacity)
 		{
-			throw std::runtime_error("Vector is at full capacity, push back not allowed!\n");
+			throw std::runtime_error("Vector is at full capacity, push back not allowed!");
 		}
 
 		std::construct_at(std::to_address(end()), std::forward<T>(args)...);
@@ -1201,7 +1220,7 @@ public:
 	{
 		if (_size == Capacity)
 		{
-			throw std::runtime_error("Vector is at full capacity, insertion not allowed!\n");
+			throw std::runtime_error("Vector is at full capacity, insertion not allowed!");
 		}
 		
 		std::construct_at(std::to_address(end()), std::move(*(end() - 1)));
@@ -1286,7 +1305,7 @@ public:
 	constexpr void resize(std::size_t new_size) noexcept (std::is_nothrow_default_constructible_v<T> && std::is_nothrow_destructible_v<T>)
 	{
 		if (new_size > Capacity)
-			throw std::runtime_error("Can't resize beyond capacity!\n");
+			throw std::runtime_error("Can't resize beyond capacity!");
 
 		if (new_size > _size)
 		{
@@ -1328,32 +1347,36 @@ public:
 
 	constexpr reference front() noexcept
 	{
-		return *reinterpret_cast<T*>(&_data[0]);
+		return *reinterpret_cast<T*>(std::addressof(_data));
 	}
 
 	constexpr const_reference front() const noexcept
 	{
-		return *reinterpret_cast<const T*>(&_data[0]);
+		return *reinterpret_cast<const T*>(std::addressof(_data));
 	}
 
 	constexpr reference back() noexcept
 	{
-		return *reinterpret_cast<T*>(&_data[_size - 1]);
+		const auto* data_as_T_array = reinterpret_cast<T*>(std::addressof(_data));
+
+		return data_as_T_array[_size - 1];
 	}
 
 	constexpr const_reference back() const noexcept
 	{
-		return *reinterpret_cast<const T*>(&_data[_size - 1]);
+		const auto* const data_as_T_array = reinterpret_cast<const T*>(std::addressof(_data));
+
+		return data_as_T_array[_size - 1];
 	}
 
 	constexpr pointer data() noexcept
 	{
-		return reinterpret_cast<T*>(&_data[0]);
+		return reinterpret_cast<T*>(std::addressof(_data));
 	}
 
 	constexpr const_pointer data() const noexcept
 	{
-		return reinterpret_cast<const T*>(&_data[0]);
+		return reinterpret_cast<const T*>(std::addressof(_data));
 	}
 };
 
