@@ -305,7 +305,7 @@ public:
 
 		constexpr reverse_iterator& operator++ () noexcept
 		{
-			++ptr;
+			--ptr;
 			return *this;
 		}
 
