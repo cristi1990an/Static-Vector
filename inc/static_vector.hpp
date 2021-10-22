@@ -20,6 +20,7 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 template <typename T, size_t Capacity>
 class static_vector
 {
+	// std::aligned_storage_t will hold the stack memory for our objects but won't actually initialize them. In that sense it's like 'alignas(alignof(T)) char[Capacity * sizeof(T)] _data' but type-safe and with some extra bells and whistles.
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
 	std::size_t _size = 0;
 
@@ -588,27 +589,28 @@ public:
 	}
 
 	static constexpr bool nothrow_move_constructor_requirements = (
-		// If we can't move either because move throws or isn't available, the move constructor depends on the copy constructible being nothrow, since that's what's going to be called instead
+	// If we can't move either because move throws or isn't available, the move constructor depends on the copy constructible being nothrow, since that's what's going to be called instead,
+	// mimicking the behaviour of std::vector. 
 	((!std::is_nothrow_move_constructible_v<T> || !std::is_move_constructible_v<T>) && std::is_nothrow_copy_constructible_v<T>) ||
-	// Otherwise we simply check if T is nothrow move constructible
+	// Otherwise we simply check if T is nothrow move constructible.
 		(std::is_nothrow_move_constructible_v<T>));
 
-	// Both the move constructor and the move assignment operator are nothrow
+	// Both the move constructor and the move assignment operator are nothrow.
 		static constexpr bool is_both_nothrow_move_constructible_and_move_assignable = std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
 
-	// Both the move constructor and the move assignment operator are available
+	// Both the move constructor and the move assignment operator are available.
 		static constexpr bool both_move_constructible_and_move_assignable = std::is_move_constructible_v<T> && std::is_move_assignable_v<T>;
 
-	// Both the copy constructor and the copy assignment operator are nothrow
+	// Both the copy constructor and the copy assignment operator are nothrow.
 		static constexpr bool is_both_nothrow_copy_constructible_and_copy_assignable = std::is_nothrow_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>;
 
 		static constexpr bool nothrow_move_assignment_requirements =
-	// All nothrow cases require the destructor to be nothrow since any surplus elements in the original array will be destructed
+	// All nothrow cases require the destructor to be nothrow since any surplus elements in the original array will be destructed.
 		std::is_nothrow_destructible_v<T> &&
 	// If we can't move either because move throws or isn't available, the move assignment depends on the copy assignment/construction being nothrow, since that's what's going to be called instead.
 	// Here we check for both the move constructor and the move assignment operator, since both *could be called.
 		(((!is_both_nothrow_move_constructible_and_move_assignable || !both_move_constructible_and_move_assignable) && is_both_nothrow_copy_constructible_and_copy_assignable) ||
-	// Otherwise we simply check if T is nothrow move constructible and assignable
+	// Otherwise we simply check if T is nothrow move constructible and assignable.
 		is_both_nothrow_move_constructible_and_move_assignable);
 
 	constexpr static_vector() noexcept = default;
@@ -1483,6 +1485,8 @@ namespace static_vector_static_assertions
 		~NO_THROW_COPYABLE_WITH_NO_MOVE() noexcept(IS_NO_THROW) {}
 	};
 
+
+	// Trivial copy/move is guaranteed when the underlying type is trivially copyiable/movable.
 	static_assert(!std::is_trivially_move_constructible_v<static_vector<std::string, 10>>);
 	static_assert(std::is_trivially_move_constructible_v<static_vector<int, 10>>);
 	static_assert(!std::is_trivially_copy_constructible_v<static_vector<std::string, 10>>);
@@ -1491,6 +1495,9 @@ namespace static_vector_static_assertions
 	static_assert(std::is_trivially_move_assignable_v<static_vector<int, 10>>);
 	static_assert(!std::is_trivially_copy_assignable_v<static_vector<std::string, 10>>);
 	static_assert(std::is_trivially_copy_assignable_v<static_vector<int, 10>>);
+
+	// static_vector is guaranteed not to throw when the underlying type won't throw when copied/moved/constructed etc.
+	// std::vector can't guaratee this since it does dynamic allocations on top of that, but we can.
 	static_assert(!std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);
 	static_assert(std::is_nothrow_move_constructible_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<true>, 10>>);
 	static_assert(!std::is_nothrow_move_assignable_v<static_vector<NO_THROW_COPYABLE_WITH_NO_MOVE<false>, 10>>);
