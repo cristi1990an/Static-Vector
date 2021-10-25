@@ -523,27 +523,27 @@ public:
 
 	constexpr iterator begin() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[0]))));
+		return iterator(std::launder(reinterpret_cast<T*>(&_data[0])));
 	}
 	constexpr iterator end() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1]))));
+		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
 	}
 	constexpr const_iterator begin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0]))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
 	}
 	constexpr const_iterator end() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1]))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
 	}
 	constexpr const_iterator cbegin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0]))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
 	}
 	constexpr const_iterator cend() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1]))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
 	}
 	constexpr reverse_iterator rbegin() noexcept
 	{
@@ -1104,7 +1104,7 @@ public:
 			}
 		}
 
-		return (*reinterpret_cast<const T*>(&_data[index]))
+		return (*reinterpret_cast<const T*>(&_data[index]));
 	}
 
 	constexpr reference at(std::size_t index) 
@@ -1114,7 +1114,7 @@ public:
 			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return (*reinterpret_cast<T*>(&_data[index]))
+		return (*reinterpret_cast<T*>(&_data[index]));
 	}
 
 	constexpr const_reference at(std::size_t index) const 
@@ -1124,7 +1124,7 @@ public:
 			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return (*reinterpret_cast<const T*>(&_data[index]))
+		return (*reinterpret_cast<const T*>(&_data[index]));
 	}
 
 	constexpr void push_back(const T& val)
