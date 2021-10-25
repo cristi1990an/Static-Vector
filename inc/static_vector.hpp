@@ -523,69 +523,51 @@ public:
 
 	constexpr iterator begin() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(std::addressof(_data))));
+		return iterator(std::launder(reinterpret_cast<T*>(&_data[0]))));
 	}
 	constexpr iterator end() noexcept
 	{
-		const auto* data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
-		const auto* end_ptr = std::addressof(data_as_T_ptr[_size]);
-		return iterator(std::launder(end_ptr));
+		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1]))));
 	}
 	constexpr const_iterator begin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(std::addressof(_data))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0]))));
 	}
 	constexpr const_iterator end() const noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size]);
-		return const_iterator(std::launder(end_ptr));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1]))));
 	}
 	constexpr const_iterator cbegin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(std::addressof(_data))));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0]))));
 	}
 	constexpr const_iterator cend() const noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size]);
-		return const_iterator(std::launder(end_ptr));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1]))));
 	}
 	constexpr reverse_iterator rbegin() noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
-		return reverse_iterator(std::launder(end_ptr));
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
 	}
 	constexpr reverse_iterator rend() noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
-		return reverse_iterator(std::launder(end_ptr));
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
 	}
 	constexpr const_reverse_iterator rbegin() const noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
-		return const_reverse_iterator(std::launder(end_ptr));
+		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
 	}
 	constexpr const_reverse_iterator rend() const noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
-		return const_reverse_iterator(std::launder(end_ptr));
+		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
 	}
 	constexpr const_reverse_iterator crbegin() const noexcept
 	{
-		const auto* data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* end_ptr = std::addressof(data_as_T_ptr[_size - 1]);
-		return const_reverse_iterator(std::launder(end_ptr));
+		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
 	}
 	constexpr const_reverse_iterator crend() const noexcept
 	{
-		const auto* const data_as_T_ptr = reinterpret_cast<const T*>(std::addressof(_data));
-		const auto* const end_ptr = std::addressof(data_as_T_ptr[-1]);
-		return const_reverse_iterator(std::launder(end_ptr));
+		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
 	}
 
 	static constexpr bool nothrow_move_constructor_requirements = (
@@ -1109,7 +1091,7 @@ public:
 			}
 		}
 
-		return (reinterpret_cast<T*>(std::addressof(_data)))[index];
+		return (*reinterpret_cast<T*>(&_data[index]));
 	}
 
 	constexpr const_reference operator[] (std::size_t index) const noexcept(!STATIC_VECTOR_DEBUGGING)
@@ -1122,7 +1104,7 @@ public:
 			}
 		}
 
-		return (reinterpret_cast<const T*>(std::addressof(_data)))[index];
+		return (*reinterpret_cast<const T*>(&_data[index]))
 	}
 
 	constexpr reference at(std::size_t index) 
@@ -1132,7 +1114,7 @@ public:
 			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return (reinterpret_cast<T*>(std::addressof(_data)))[index];
+		return (*reinterpret_cast<T*>(&_data[index]))
 	}
 
 	constexpr const_reference at(std::size_t index) const 
@@ -1142,7 +1124,7 @@ public:
 			throw std::out_of_range("Index out of bounds!");
 		}
 
-		return (reinterpret_cast<const T*>(std::addressof(_data)))[index];
+		return (*reinterpret_cast<const T*>(&_data[index]))
 	}
 
 	constexpr void push_back(const T& val)
@@ -1176,8 +1158,7 @@ public:
 
 		if constexpr (!std::is_trivially_destructible_v<T>)
 		{
-			const auto* data_as_T_array = reinterpret_cast<T*>(std::addressof(_data));
-			std::destroy_at(std::addressof(data_as_T_array[_size - 1]));
+			std::destroy_at(reinterpret_cast<T*>(&_data[_size - 1]));
 		}
 
 		_size--;
@@ -1349,36 +1330,32 @@ public:
 
 	constexpr reference front() noexcept
 	{
-		return *reinterpret_cast<T*>(std::addressof(_data));
+		return *reinterpret_cast<T*>(&_data[0]);
 	}
 
 	constexpr const_reference front() const noexcept
 	{
-		return *reinterpret_cast<const T*>(std::addressof(_data));
+		return *reinterpret_cast<const T*>(&_data[0]);
 	}
 
 	constexpr reference back() noexcept
 	{
-		const auto* data_as_T_array = reinterpret_cast<T*>(std::addressof(_data));
-
-		return data_as_T_array[_size - 1];
+		return *reinterpret_cast<T*>(&_data[_size - 1]);
 	}
 
 	constexpr const_reference back() const noexcept
 	{
-		const auto* const data_as_T_array = reinterpret_cast<const T*>(std::addressof(_data));
-
-		return data_as_T_array[_size - 1];
+		return *reinterpret_cast<const T*>(&_data[_size - 1]);
 	}
 
 	constexpr pointer data() noexcept
 	{
-		return reinterpret_cast<T*>(std::addressof(_data));
+		return reinterpret_cast<T*>(&_data[0]);
 	}
 
 	constexpr const_pointer data() const noexcept
 	{
-		return reinterpret_cast<const T*>(std::addressof(_data));
+		return reinterpret_cast<const T*>(&_data[0]);
 	}
 };
 

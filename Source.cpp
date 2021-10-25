@@ -14,8 +14,5 @@
 
 int main()
 {
-	static_vector<std::string, 10> vec = { "Cristi", "este", "foarte", "tare" };
-
-	std::for_each(vec.crbegin(), vec.crend(), [](const auto& word) {std::cout << word << ' '; });
-
+	
 }
