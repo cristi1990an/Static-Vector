@@ -527,7 +527,7 @@ public:
 	}
 	constexpr iterator end() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size])));
 	}
 	constexpr const_iterator begin() const noexcept
 	{
@@ -535,7 +535,7 @@ public:
 	}
 	constexpr const_iterator end() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
 	}
 	constexpr const_iterator cbegin() const noexcept
 	{
@@ -543,7 +543,7 @@ public:
 	}
 	constexpr const_iterator cend() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
 	}
 	constexpr reverse_iterator rbegin() noexcept
 	{
@@ -555,19 +555,19 @@ public:
 	}
 	constexpr const_reverse_iterator rbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
 	}
 	constexpr const_reverse_iterator rend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 	constexpr const_reverse_iterator crbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
 	}
 	constexpr const_reverse_iterator crend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
 	}
 
 	static constexpr bool nothrow_move_constructor_requirements = (
@@ -618,7 +618,7 @@ public:
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
-		std::uninitialized_default_construct_n(begin(), count);
+		std::uninitialized_value_construct_n(begin(), count);
 
 		_size = count;
 	}
@@ -1172,7 +1172,7 @@ public:
 			throw std::runtime_error("Vector is at full capacity, push back not allowed!");
 		}
 
-		std::construct_at(std::to_address(end()), std::forward<T>(args)...);
+		std::construct_at(std::to_address(end()), std::forward<Args>(args)...);
 		_size++;
 	}
 

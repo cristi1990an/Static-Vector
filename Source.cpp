@@ -14,5 +14,16 @@
 
 int main()
 {
-	
+	static_vector<int, 100> vec;
+
+	for (int i = 1; i <= 50; i++)
+	{
+		vec.push_back(i);
+	}
+
+	for (const auto val : vec)
+	{
+		std::cout << val << ' ';
+	}
+	std::cout << '\n';
 }
