@@ -661,7 +661,7 @@ public:
 		std::uninitialized_copy_n(other.cbegin(), other.size(), begin());
 	}
 
-	template<std::size_t Other_Capacity> requires (std::copy_constructible<T> && !std::is_trivially_copy_constructible_v<T> && (Capacity != Other_Capacity))
+	template<std::size_t Other_Capacity> requires (std::is_copy_constructible_v<T> && (Capacity != Other_Capacity))
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity < Capacity))
 	{
 		if constexpr (Other_Capacity > Capacity)
@@ -976,7 +976,7 @@ public:
 		_size = count;
 	}
 
-	template <typename InputIt>// requires (std::is_constructible_from_v<T, typename InputIt::value_type)
+	template <typename InputIt> requires (std::is_convertible_v<typename std::iterator_traits<InputIt>::value_type, T>)
 	constexpr void assign(InputIt first, InputIt last)
 	{
 		const auto new_size = static_cast<size_t>(std::distance(first, last));
