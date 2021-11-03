@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <utility>
 #include <algorithm>
@@ -20,8 +21,8 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 template <typename T, size_t Capacity>
 class static_vector
 {
-	// std::aligned_storage_t will hold the stack memory for our objects but won't actually initialize them. In that sense it's like 'alignas(alignof(T)) char[Capacity * sizeof(T)] _data' but type-safe and with some extra bells and whistles.
-	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity];
+	// std::aligned_storage_t will hold the stack memory for our objects but won't actually initialize them.
+	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity]{};
 	std::size_t _size = 0;
 
 public:
@@ -599,58 +600,54 @@ public:
 
 	constexpr static_vector(std::size_t count, const T& value) 
 		requires (std::is_copy_constructible_v<T>)
+		: _size(count)
 	{
 		if (count > Capacity)
 		{
+			_size = 0;
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_fill_n(begin(), count, value);
-
-		_size = count;
 	}
 
 	constexpr static_vector(std::size_t count)  
 		requires (std::is_default_constructible_v<T>)
+		: _size(count)
 	{
 		if (count > Capacity)
 		{
+			_size = 0;
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_value_construct_n(begin(), count);
-
-		_size = count;
 	}
 
-	template<typename Iterator> requires std::constructible_from<T, typename Iterator::value_type>
+	template<typename Iterator> requires (std::forward_iterator<Iterator> && std::constructible_from<T, typename Iterator::value_type>)
 	constexpr static_vector(Iterator first, Iterator last) 
+		: _size(std::distance(first, last))
 	{
-		const auto count = std::distance(first, last);
-
-		if (count > Capacity)
+		if (std::distance(first, last) > Capacity)
 		{
+			_size = 0;
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
 		std::uninitialized_copy(first, last, begin());
-
-		_size = count;
 	}
 
 	template <typename U> requires std::constructible_from<T, U>
 	constexpr static_vector(std::initializer_list<U> values)
+		: _size(values.size())
 	{
-		const auto count = values.size();
-
-		if (count > Capacity)
+		if (values.size() > Capacity)
 		{
+			_size = 0;
 			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
 		}
 
-		std::uninitialized_copy_n(values.begin(), count, begin());
-
-		_size = count;
+		std::uninitialized_copy_n(values.begin(), values.size(), begin());
 	}
 
 	constexpr static_vector(const static_vector& other) noexcept requires (std::is_copy_constructible_v<T> && std::is_trivially_copy_constructible_v<T>) = default;
@@ -663,23 +660,24 @@ public:
 
 	template<std::size_t Other_Capacity> requires (std::is_copy_constructible_v<T> && (Capacity != Other_Capacity))
 	constexpr static_vector(const static_vector<T, Other_Capacity>& other) noexcept (std::is_nothrow_copy_constructible_v<T> && (Other_Capacity < Capacity))
+		: _size (other.size())
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
 			if (other.size() > Capacity)
 			{
+				_size = 0;
 				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 			}
 		}
 
 		std::uninitialized_copy_n(other.cbegin(), other.size(), begin()); 
-
-		_size = other.size();
 	}
 
 	constexpr static_vector(static_vector&& other) noexcept requires (std::is_trivially_move_constructible_v<T> && std::is_move_constructible_v<T>) = default;
 
 	constexpr static_vector(static_vector&& other) noexcept (nothrow_move_constructor_requirements) requires (!std::is_trivially_move_constructible_v<T> && (std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>))
+		: _size (other.size())
 	{
 		if constexpr ((std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>) && std::is_move_constructible_v<T>)
 		{
@@ -689,19 +687,19 @@ public:
 		{
 			std::uninitialized_copy_n(other.begin(), other.size(), begin());
 		}
-
-		_size = other.size();
 
 		other.clear();
 	}
 
 	template<std::size_t Other_Capacity> requires ((std::is_move_constructible_v<T> || std::is_copy_constructible_v<T>) && (Capacity != Other_Capacity))
 		constexpr static_vector(static_vector<T, Other_Capacity>&& other) noexcept (nothrow_move_constructor_requirements&& Capacity > Other_Capacity)
+		: _size(other.size())
 	{
 		if constexpr (Other_Capacity > Capacity)
 		{
 			if (other.size() > Capacity)
 			{
+				_size = 0;
 				throw std::runtime_error("Static vector lacks the capacity to store the data of the other vector!");
 			}
 		}
@@ -714,8 +712,6 @@ public:
 		{
 			std::uninitialized_copy_n(other.begin(), other.size(), begin());
 		}
-
-		_size = other.size();
 
 		other.clear();
 	}
@@ -976,8 +972,8 @@ public:
 		_size = count;
 	}
 
-	template <typename InputIt> requires (std::is_convertible_v<typename std::iterator_traits<InputIt>::value_type, T>)
-	constexpr void assign(InputIt first, InputIt last)
+	template <typename Iterator> requires (std::forward_iterator<Iterator> && std::is_convertible_v<typename std::iterator_traits<Iterator>::value_type, T>)
+	constexpr void assign(Iterator first, Iterator last)
 	{
 		const auto new_size = static_cast<size_t>(std::distance(first, last));
 
