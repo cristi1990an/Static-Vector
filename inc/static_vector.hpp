@@ -1492,5 +1492,5 @@ namespace static_vector_static_assertions
 	static_assert(!std::is_nothrow_constructible_v<static_vector<int, 10>, std::initializer_list<int>>);
 	static_assert(std::is_nothrow_swappable_v<static_vector<int, 10>>);
 	static_assert(!std::is_nothrow_swappable_v<static_vector<NO_THROW_MOVE<false>, 10>>);
-	//static_assert(std::is_nothrow_swappable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);
+	//static_assert(std::is_nothrow_swappable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);  // TODO: ??
 }
