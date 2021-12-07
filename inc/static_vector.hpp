@@ -21,7 +21,7 @@ constexpr void swap(static_vector<T, Capacity>& lhs, static_vector<T, Capacity>&
 template <typename T, size_t Capacity>
 class static_vector
 {
-	// std::aligned_storage_t will hold the stack memory for our objects but won't actually initialize them.
+	// std::aligned_storage_t will hold the stack memory for our objects but won't actually initialize them
 	std::aligned_storage_t<sizeof(T), alignof(T)> _data[Capacity]{};
 	std::size_t _size = 0;
 
@@ -1492,5 +1492,5 @@ namespace static_vector_static_assertions
 	static_assert(!std::is_nothrow_constructible_v<static_vector<int, 10>, std::initializer_list<int>>);
 	static_assert(std::is_nothrow_swappable_v<static_vector<int, 10>>);
 	static_assert(!std::is_nothrow_swappable_v<static_vector<NO_THROW_MOVE<false>, 10>>);
-	//static_assert(std::is_nothrow_swappable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);  // TODO: ??
+	//static_assert(std::is_nothrow_swappable_v<static_vector<NO_THROW_COPYABLE<true>, 10>>);  // fix this one later
 }
