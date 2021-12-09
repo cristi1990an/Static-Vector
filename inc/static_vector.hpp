@@ -524,51 +524,51 @@ public:
 
 	constexpr iterator begin() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[0])));
+		return iterator(std::launder(reinterpret_cast<T*>(_data)));
 	}
 	constexpr iterator end() noexcept
 	{
-		return iterator(std::launder(reinterpret_cast<T*>(&_data[_size])));
+		return iterator(std::launder(reinterpret_cast<T*>(_data + _size)));
 	}
 	constexpr const_iterator begin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(_data)));
 	}
 	constexpr const_iterator end() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(_data + _size)));
 	}
 	constexpr const_iterator cbegin() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[0])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(_data)));
 	}
 	constexpr const_iterator cend() const noexcept
 	{
-		return const_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size])));
+		return const_iterator(std::launder(reinterpret_cast<const T*>(_data + _size)));
 	}
 	constexpr reverse_iterator rbegin() noexcept
 	{
-		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[_size - 1])));
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(_data + _size - 1)));
 	}
 	constexpr reverse_iterator rend() noexcept
 	{
-		return reverse_iterator(std::launder(reinterpret_cast<T*>(&_data[-1])));
+		return reverse_iterator(std::launder(reinterpret_cast<T*>(_data - 1)));
 	}
 	constexpr const_reverse_iterator rbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(_data + _size -1)));
 	}
 	constexpr const_reverse_iterator rend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(_data - 1)));
 	}
 	constexpr const_reverse_iterator crbegin() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[_size - 1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(_data + _size - 1)));
 	}
 	constexpr const_reverse_iterator crend() const noexcept
 	{
-		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(&_data[-1])));
+		return const_reverse_iterator(std::launder(reinterpret_cast<const T*>(_data - 1)));
 	}
 
 	static constexpr bool nothrow_move_constructor_requirements = (
