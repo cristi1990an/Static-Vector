@@ -637,7 +637,19 @@ public:
 		std::uninitialized_copy(first, last, begin());
 	}
 
-	template <typename U> requires std::constructible_from<T, U>
+	constexpr static_vector(std::initializer_list<T> values)
+		: _size(values.size())
+	{
+		if (values.size() > Capacity)
+		{
+			_size = 0;
+			throw std::runtime_error("Static vector lacks the capacity for so many elements!");
+		}
+
+		std::uninitialized_copy_n(values.begin(), values.size(), begin());
+	}
+
+	template <typename U> requires std::constructible_from<T, U> && !std::same_as<T, U>
 	constexpr static_vector(std::initializer_list<U> values)
 		: _size(values.size())
 	{
